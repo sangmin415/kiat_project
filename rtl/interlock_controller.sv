@@ -1,8 +1,8 @@
 `default_nettype none
 
 module interlock_controller #(
-    parameter logic [7:0] WARNING_THRESHOLD = 8'd20,
-    parameter logic [7:0] DANGER_THRESHOLD  = 8'd50
+    parameter [7:0] WARNING_THRESHOLD = 8'd20,
+    parameter [7:0] DANGER_THRESHOLD  = 8'd50
 ) (
     input  logic       clk,
     input  logic       reset,
