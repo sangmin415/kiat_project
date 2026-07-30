@@ -1,102 +1,147 @@
-ecng039@ecelnx09:~/Desktop/kiat_project$ cd kiat_project
-make test
-bash: cd: kiat_project: No such file or directory
-mkdir -p build
-iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
-vvp build/interlock_tb
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-ERROR: tb/interlock_controller_tb.sv:21: ESD_SIM TRIP: state=0 motor=1
-       Time: 90000 Scope: interlock_controller_tb.check
-FATAL: tb/interlock_controller_tb.sv:22: 
-       Time: 90000 Scope: interlock_controller_tb.check
-make: *** [Makefile:14: test] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ cd kiat_project
-git pull
-make clean
-make test
-bash: cd: kiat_project: No such file or directory
-Already up to date.
-rm -rf build
-mkdir -p build
-iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
-vvp build/interlock_tb
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-ERROR: tb/interlock_controller_tb.sv:21: ESD_SIM TRIP: state=0 motor=1
-       Time: 90000 Scope: interlock_controller_tb.check
-FATAL: tb/interlock_controller_tb.sv:22: 
-       Time: 90000 Scope: interlock_controller_tb.check
-make: *** [Makefile:14: test] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ git pull origin main
-From https://github.com/sangmin415/kiat_project
- * branch            main       -> FETCH_HEAD
-Updating 2abaa85..1fee643
-Fast-forward
- Makefile                      |  14 ++++++++
- README.md                     |   1 +
- docs/COMMANDS_KO.md           |  28 ++++++++++++++++
- docs/NO_PARTS_FPGA_DEMO_KO.md | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 167 insertions(+)
- create mode 100644 docs/NO_PARTS_FPGA_DEMO_KO.md
-ecng039@ecelnx09:~/Desktop/kiat_project$ make test
-mkdir -p build
-iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
-vvp build/interlock_tb
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-ERROR: tb/interlock_controller_tb.sv:21: ESD_SIM TRIP: state=0 motor=1
-       Time: 90000 Scope: interlock_controller_tb.check
-FATAL: tb/interlock_controller_tb.sv:22: 
-       Time: 90000 Scope: interlock_controller_tb.check
-make: *** [Makefile:14: test] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ make clean
-rm -rf build
-ecng039@ecelnx09:~/Desktop/kiat_project$ make test
-mkdir -p build
-iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
-vvp build/interlock_tb
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-ERROR: tb/interlock_controller_tb.sv:21: ESD_SIM TRIP: state=0 motor=1
-       Time: 90000 Scope: interlock_controller_tb.check
-FATAL: tb/interlock_controller_tb.sv:22: 
-       Time: 90000 Scope: interlock_controller_tb.check
-make: *** [Makefile:14: test] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ make lint
-verilator --lint-only -Wall -Wno-UNUSEDSIGNAL --top-module top_board_demo rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv
-%Error: Unknown warning specified: -Wno-UNUSEDSIGNAL
-make: *** [Makefile:17: lint] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
-mkdir -p build
-yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
-rtl/interlock_controller.sv:4: ERROR: syntax error, unexpected TOK_LOGIC, expecting TOK_ID or TOK_INTEGER or TOK_SIGNED or '['
-make: *** [Makefile:21: build/interlock_demo.json] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
-ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
-ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
-ecng039@ecelnx09:~/Desktop/kiat_project$ git pull origin main
-From https://github.com/sangmin415/kiat_project
- * branch            main       -> FETCH_HEAD
-Already up to date.
-ecng039@ecelnx09:~/Desktop/kiat_project$ make clean
-rm -rf build
-ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
-mkdir -p build
-yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
-rtl/interlock_controller.sv:17: ERROR: syntax error, unexpected TOK_LOGIC
-make: *** [Makefile:21: build/interlock_demo.json] Error 1
-ecng039@ecelnx09:~/Desktop/kiat_project$ make test
-mkdir -p build
-iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
-vvp build/interlock_tb
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-PASS: interlock_controller_tb
 ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
 mkdir -p build
 yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
 nextpnr-ice40 --hx8k --package ct256 --pcf constraints/ece270_rev2.pcf --json build/interlock_demo.json --asc build/interlock_demo.asc
-make: nextpnr-ice40: No such file or directory
-make: *** [Makefile:24: build/interlock_demo.asc] Error 127
-ecng039@ecelnx09:~/Desktop/kiat_project$ make sim_interlock_controller_src
-Compiling interlock_controller source simulation...
-Running interlock_controller testbench...
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-PASS: interlock_controller_tb
-Simulation complete. VCD: build/interlock_controller.vcd
+Info: constrained 'hwclk' to bel 'X0/Y16/io1'
+Warning: unmatched constraint 'pb[20]' (on line 6)
+Warning: unmatched constraint 'pb[19]' (on line 8)
+Warning: unmatched constraint 'pb[18]' (on line 9)
+Warning: unmatched constraint 'pb[17]' (on line 10)
+Warning: unmatched constraint 'pb[16]' (on line 11)
+Warning: unmatched constraint 'pb[15]' (on line 13)
+Warning: unmatched constraint 'pb[14]' (on line 14)
+Warning: unmatched constraint 'pb[13]' (on line 15)
+Warning: unmatched constraint 'pb[12]' (on line 16)
+Warning: unmatched constraint 'pb[11]' (on line 18)
+Warning: unmatched constraint 'pb[10]' (on line 19)
+Warning: unmatched constraint 'pb[9]' (on line 20)
+Warning: unmatched constraint 'pb[8]' (on line 21)
+Warning: unmatched constraint 'pb[7]' (on line 23)
+Warning: unmatched constraint 'pb[6]' (on line 24)
+Warning: unmatched constraint 'pb[5]' (on line 25)
+Warning: unmatched constraint 'pb[4]' (on line 26)
+Info: constrained 'pb[3]' to bel 'X4/Y33/io0'
+Info: constrained 'pb[2]' to bel 'X3/Y33/io1'
+Info: constrained 'pb[1]' to bel 'X3/Y33/io0'
+Info: constrained 'pb[0]' to bel 'X1/Y33/io0'
+Info: constrained 'ss0[0]' to bel 'X0/Y27/io0'
+Info: constrained 'ss0[1]' to bel 'X0/Y28/io1'
+Info: constrained 'ss0[2]' to bel 'X0/Y28/io0'
+Info: constrained 'ss0[3]' to bel 'X0/Y21/io0'
+Info: constrained 'ss0[4]' to bel 'X0/Y17/io0'
+Info: constrained 'ss0[5]' to bel 'X0/Y23/io0'
+Info: constrained 'ss0[6]' to bel 'X0/Y20/io0'
+Info: constrained 'ss0[7]' to bel 'X0/Y30/io0'
+Info: constrained 'ss1[0]' to bel 'X0/Y14/io1'
+Info: constrained 'ss1[1]' to bel 'X0/Y14/io0'
+Info: constrained 'ss1[2]' to bel 'X0/Y18/io0'
+Info: constrained 'ss1[3]' to bel 'X0/Y11/io0'
+Info: constrained 'ss1[4]' to bel 'X0/Y10/io0'
+Info: constrained 'ss1[5]' to bel 'X0/Y12/io0'
+Info: constrained 'ss1[6]' to bel 'X0/Y13/io0'
+Info: constrained 'ss1[7]' to bel 'X0/Y19/io0'
+Info: constrained 'ss2[0]' to bel 'X0/Y5/io1'
+Info: constrained 'ss2[1]' to bel 'X0/Y4/io1'
+Info: constrained 'ss2[2]' to bel 'X0/Y6/io0'
+Info: constrained 'ss2[3]' to bel 'X23/Y0/io0'
+Info: constrained 'ss2[4]' to bel 'X22/Y0/io1'
+Info: constrained 'ss2[5]' to bel 'X27/Y0/io0'
+Info: constrained 'ss2[6]' to bel 'X28/Y0/io0'
+Info: constrained 'ss2[7]' to bel 'X0/Y8/io0'
+Info: constrained 'ss3[0]' to bel 'X20/Y0/io1'
+Info: constrained 'ss3[1]' to bel 'X23/Y0/io1'
+Info: constrained 'ss3[2]' to bel 'X26/Y0/io0'
+Info: constrained 'ss3[3]' to bel 'X17/Y0/io1'
+Info: constrained 'ss3[4]' to bel 'X21/Y0/io0'
+Info: constrained 'ss3[5]' to bel 'X19/Y0/io0'
+Info: constrained 'ss3[6]' to bel 'X21/Y0/io1'
+Info: constrained 'ss3[7]' to bel 'X29/Y0/io1'
+Info: constrained 'ss4[0]' to bel 'X12/Y0/io1'
+Info: constrained 'ss4[1]' to bel 'X11/Y0/io1'
+Info: constrained 'ss4[2]' to bel 'X13/Y0/io1'
+Info: constrained 'ss4[3]' to bel 'X6/Y0/io1'
+Info: constrained 'ss4[4]' to bel 'X5/Y0/io1'
+Info: constrained 'ss4[5]' to bel 'X7/Y0/io1'
+Info: constrained 'ss4[6]' to bel 'X10/Y0/io1'
+Info: constrained 'ss4[7]' to bel 'X14/Y0/io0'
+Info: constrained 'ss5[0]' to bel 'X33/Y1/io1'
+Info: constrained 'ss5[1]' to bel 'X2/Y0/io1'
+Info: constrained 'ss5[2]' to bel 'X4/Y0/io1'
+Info: constrained 'ss5[3]' to bel 'X33/Y10/io0'
+Info: constrained 'ss5[4]' to bel 'X33/Y5/io0'
+Info: constrained 'ss5[5]' to bel 'X33/Y8/io0'
+Info: constrained 'ss5[6]' to bel 'X33/Y3/io0'
+Info: constrained 'ss5[7]' to bel 'X23/Y33/io1'
+Info: constrained 'ss6[0]' to bel 'X33/Y11/io0'
+Info: constrained 'ss6[1]' to bel 'X33/Y13/io1'
+Info: constrained 'ss6[2]' to bel 'X33/Y12/io0'
+Info: constrained 'ss6[3]' to bel 'X33/Y20/io0'
+Info: constrained 'ss6[4]' to bel 'X33/Y11/io1'
+Info: constrained 'ss6[5]' to bel 'X33/Y17/io1'
+Info: constrained 'ss6[6]' to bel 'X33/Y22/io1'
+Info: constrained 'ss6[7]' to bel 'X33/Y13/io0'
+Info: constrained 'ss7[0]' to bel 'X33/Y21/io0'
+Info: constrained 'ss7[1]' to bel 'X33/Y27/io1'
+Info: constrained 'ss7[2]' to bel 'X33/Y19/io0'
+Info: constrained 'ss7[3]' to bel 'X33/Y30/io0'
+Info: constrained 'ss7[4]' to bel 'X33/Y24/io0'
+Info: constrained 'ss7[5]' to bel 'X33/Y31/io0'
+Info: constrained 'ss7[6]' to bel 'X33/Y23/io0'
+Info: constrained 'ss7[7]' to bel 'X33/Y22/io0'
+Info: constrained 'left[7]' to bel 'X33/Y28/io0'
+Info: constrained 'left[6]' to bel 'X33/Y26/io0'
+Info: constrained 'left[5]' to bel 'X33/Y17/io0'
+Info: constrained 'left[4]' to bel 'X33/Y25/io0'
+Info: constrained 'left[3]' to bel 'X33/Y7/io0'
+Info: constrained 'left[2]' to bel 'X33/Y2/io1'
+Info: constrained 'left[1]' to bel 'X3/Y0/io1'
+Info: constrained 'left[0]' to bel 'X6/Y0/io0'
+Info: constrained 'right[7]' to bel 'X20/Y0/io0'
+Info: constrained 'right[6]' to bel 'X24/Y0/io0'
+Info: constrained 'right[5]' to bel 'X0/Y3/io1'
+Info: constrained 'right[4]' to bel 'X0/Y9/io0'
+Info: constrained 'right[3]' to bel 'X0/Y13/io1'
+Info: constrained 'right[2]' to bel 'X0/Y16/io0'
+Info: constrained 'right[1]' to bel 'X0/Y25/io0'
+Info: constrained 'right[0]' to bel 'X0/Y31/io0'
+Info: constrained 'red' to bel 'X12/Y0/io0'
+Info: constrained 'green' to bel 'X15/Y0/io1'
+Info: constrained 'blue' to bel 'X16/Y0/io1'
+Warning: unmatched constraint 'Rx' (on line 129)
+Warning: unmatched constraint 'Tx' (on line 130)
+Warning: unmatched constraint 'DCDn' (on line 133)
+Warning: unmatched constraint 'CTSn' (on line 134)
+
+Info: Packing constants..
+Info: Packing IOs..
+Info: Packing LUT-FFs..
+Info:        6 LCs used as LUT4 only
+Info:        3 LCs used as LUT4 and DFF
+Info: Packing non-LUT FFs..
+Info:        1 LCs used as DFF only
+Info: Packing carries..
+Info:        1 LCs used as CARRY only
+Info: Packing indirect carry+LUT pairs...
+Info:        1 LUTs merged into carry LCs
+Info: Packing RAMs..
+Info: Placing PLLs..
+Info: Packing special functions..
+Info: Packing PLLs..
+Info: Promoting globals..
+Info: promoting hwclk$SB_IO_IN (fanout 4)
+Info: Constraining chains...
+Info:        2 LCs used to legalise carry chains.
+Info: Checksum: 0x9c31746d
+
+Info: Device utilisation:
+Info:            ICESTORM_LC:    14/ 7680     0%
+Info:           ICESTORM_RAM:     0/   32     0%
+Info:                  SB_IO:    88/  256    34%
+Info:                  SB_GB:     1/    8    12%
+Info:           ICESTORM_PLL:     0/    2     0%
+Info:            SB_WARMBOOT:     0/    1     0%
+
+Info: Placed 88 cells based on constraints.
+ERROR: Unable to place cell 'display', no BELs remaining to implement cell type '$scopeinfo'
+21 warnings, 1 error
+make: *** [Makefile:71: build/interlock_demo.asc] Error 255

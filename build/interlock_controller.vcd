@@ -1,5 +1,5 @@
 $date
-	Thu Jul 30 15:17:05 2026
+	Thu Jul 30 15:23:15 2026
 $end
 $version
 	Icarus Verilog
@@ -22,19 +22,32 @@ $var wire 1 & clk $end
 $var wire 1 ' reset $end
 $var wire 1 ( transient_event $end
 $var wire 8 * vibration_level [7:0] $end
+$var parameter 8 + DANGER_THRESHOLD $end
+$var parameter 2 , NORMAL $end
+$var parameter 2 - TRIP $end
+$var parameter 2 . WARN $end
+$var parameter 8 / WARNING_THRESHOLD $end
 $var reg 1 % event_latched $end
 $var reg 1 $ interlock $end
 $var reg 1 # motor_enable $end
-$var reg 2 + state [1:0] $end
+$var reg 2 0 state [1:0] $end
 $var reg 1 ! warning $end
 $upscope $end
 $scope task check $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b10100 /
+b1 .
+b10 -
+b0 ,
+b110010 +
+$end
 #0
 $dumpvars
-b0 +
+b0 0
 b0 *
 b0 )
 0(
@@ -66,7 +79,7 @@ b11110 *
 #35000
 1!
 b1 "
-b1 +
+b1 0
 1&
 #40000
 b1000110 )
@@ -77,7 +90,7 @@ b1000110 *
 1$
 0!
 b10 "
-b10 +
+b10 0
 1&
 #50000
 b101 )
@@ -89,7 +102,7 @@ b101 *
 1#
 0$
 b0 "
-b0 +
+b0 0
 1'
 0&
 #65000
@@ -110,7 +123,7 @@ b0 +
 0#
 1$
 b10 "
-b10 +
+b10 0
 1%
 1&
 #100000
