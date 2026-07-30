@@ -1,4 +1,8 @@
-# Purdue ECE270/STARS lab toolchain.
+###########################################################################################
+# Purdue KIAT/STARS - Makefile for the photo-process interlock demo
+# Simulation target naming and lab tool paths follow the ECE270 course template.
+###########################################################################################
+
 export PATH := /home/shay/a/ece270/bin:$(PATH)
 export LD_LIBRARY_PATH := /home/shay/a/ece270/lib:$(LD_LIBRARY_PATH)
 
@@ -18,7 +22,7 @@ test:
 	iverilog -g2012 -o $(BUILD)/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
 	vvp $(BUILD)/interlock_tb
 
-# Short course-style GUI alias: run the testbench and open its VCD in GTKWave.
+# Convenient short alias. It executes the course-template target below.
 sim: sim_interlock_controller_src
 
 lint:
@@ -30,6 +34,34 @@ check_env:
 		printf "%-16s" "$$tool"; \
 		command -v "$$tool" || { echo "NOT FOUND"; exit 1; }; \
 	done
+
+# *******************************************************************************
+# COMPILATION & SIMULATION TARGETS - Purdue course-template naming
+# *******************************************************************************
+
+.PHONY: sim_%_src vlint_%
+sim_%_src:
+	@echo -e "Creating executable for source simulation...\n"
+	@mkdir -p $(BUILD) && rm -rf $(BUILD)/*
+	@iverilog -g2012 -o $(BUILD)/$*_tb rtl/$*.sv tb/$*_tb.sv
+	@echo -e "\nSource compilation complete!\n"
+	@echo -e "Simulating source...\n"
+	@vvp -l vvp_sim.log $(BUILD)/$*_tb
+	@echo -e "\nSimulation complete!\n"
+	@echo -e "Opening waveforms...\n"
+	@if [ -f waves/$*.gtkw ]; then \
+		gtkwave waves/$*.gtkw; \
+	else \
+		gtkwave $(BUILD)/$*.vcd; \
+	fi
+
+vlint_%:
+	@verilator --lint-only -Wall --top-module $* rtl/$*.sv
+	@echo -e "\nNo linting errors found for $*.\n"
+
+# *******************************************************************************
+# FPGA TARGETS
+# *******************************************************************************
 
 $(JSON): $(RTL)
 	mkdir -p $(BUILD)
@@ -51,25 +83,5 @@ cram: $(BIN)
 flash: $(BIN)
 	iceprog $(BIN)
 
-# Purdue ECE270 template-compatible commands.
-.PHONY: sim_%_src vlint_%
-sim_%_src:
-	@echo "Compiling $* source simulation..."
-	@mkdir -p $(BUILD)
-	@iverilog -g2012 -o $(BUILD)/$*_tb rtl/$*.sv tb/$*_tb.sv
-	@echo "Running $* testbench..."
-	@vvp $(BUILD)/$*_tb
-	@echo "Simulation complete. VCD: $(BUILD)/$*.vcd"
-	@echo "Opening waveform viewer..."
-	@if command -v gtkwave >/dev/null 2>&1; then \
-		gtkwave $(BUILD)/$*.vcd >/dev/null 2>&1 & \
-	else \
-		echo "GTKWave not found. Open $(BUILD)/$*.vcd after installing it."; \
-	fi
-
-vlint_%:
-	@verilator --lint-only -Wall --top-module $* rtl/$*.sv
-	@echo "No linting errors found for $*."
-
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) vvp_sim.log
