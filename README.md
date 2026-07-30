@@ -180,6 +180,13 @@ PC 대시보드 기능:
 
 > ADXL345 기반 실제 진동 데이터를 FPGA로 수집하고, RISC-V CPU에서 8-sample 이동 평균 전처리를 수행했다. RC 미분기와 슈미트 트리거를 활용해 ESD 유사 과도 이벤트를 안전한 저전압 신호로 모사하고, FPGA 하드웨어 인터록 및 PC 기반 SPC·AI 대시보드와 연동했다.
 
+
+## 문서
+
+- [Linux PC 기반 FPGA 빌드·업로드·시험 가이드](docs/FPGA_TEST_GUIDE_KO.md)
+- [코드 구성 및 기능 설명서](docs/CODE_REFERENCE_KO.md)
+- [영문 FPGA 사전 테스트 가이드](docs/FPGA_TEST_GUIDE.md)
+
 ## 현재 상태
 
 - 인터록 FSM, 상태 표시 RTL 구현
@@ -188,4 +195,6 @@ PC 대시보드 기능:
 - Verilator lint 통과 (미사용 보드 버튼 경고 제외)
 - Windows Purdue 스타일 가상 FDC 데모 구현
 - FPGA 보드 사전 테스트 가이드 작성
+- Yosys 합성, nextpnr 배치·배선, IcePack 비트스트림 생성 검증 완료
+- Linux CRAM/Flash 업로드용 Makefile과 ECE270 rev.2 PCF 추가
 - ADXL345 I2C, 실제 UART 패킷 송신, Linux 실물 대시보드는 다음 단계
