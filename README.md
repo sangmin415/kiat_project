@@ -182,8 +182,10 @@ PC 대시보드 기능:
 
 ## 현재 상태
 
-- 프로젝트 범위와 시스템 구조 확정
-- Purdue ECE270 FPGA Breakout Board와 iCE40HX-8K 제약 파일 확인
-- FPGA 시뮬레이션·합성 도구 확인
-- 하드웨어 부품 주문 전
-- RTL, 테스트벤치, PC 대시보드는 구현 예정
+- 인터록 FSM, 상태 표시 RTL 구현
+- NORMAL/WARNING/INTERLOCK/ESD_SIM 테스트벤치 구현
+- Icarus Verilog 시뮬레이션 통과
+- Verilator lint 통과 (미사용 보드 버튼 경고 제외)
+- Windows Purdue 스타일 가상 FDC 데모 구현
+- FPGA 보드 사전 테스트 가이드 작성
+- ADXL345 I2C, 실제 UART 패킷 송신, Linux 실물 대시보드는 다음 단계
