@@ -1,7 +1,12 @@
 BUILD := build
 RTL := rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv
+PCF := constraints/ece270_rev2.pcf
+TOP := top_board_demo
+JSON := $(BUILD)/interlock_demo.json
+ASC := $(BUILD)/interlock_demo.asc
+BIN := $(BUILD)/interlock_demo.bin
 
-.PHONY: test lint clean
+.PHONY: test lint synth bitstream cram flash clean
 
 test:
 	mkdir -p $(BUILD)
@@ -9,8 +14,27 @@ test:
 	vvp $(BUILD)/interlock_tb
 
 lint:
-	verilator --lint-only -Wall --top-module top_board_demo $(RTL)
+	verilator --lint-only -Wall -Wno-UNUSEDSIGNAL --top-module $(TOP) $(RTL)
+
+$(JSON): $(RTL)
+	mkdir -p $(BUILD)
+	yosys -q -p "read_verilog -sv $(RTL); synth_ice40 -top $(TOP); write_json $(JSON)"
+
+$(ASC): $(JSON) $(PCF)
+	nextpnr-ice40 --hx8k --package ct256 --pcf $(PCF) --json $(JSON) --asc $(ASC)
+
+$(BIN): $(ASC)
+	icepack $(ASC) $(BIN)
+
+synth: $(JSON)
+
+bitstream: $(BIN)
+
+cram: $(BIN)
+	iceprog -S $(BIN)
+
+flash: $(BIN)
+	iceprog $(BIN)
 
 clean:
 	rm -rf $(BUILD)
-
