@@ -2,6 +2,34 @@
 
 부품 없이 `interlock_controller` 테스트벤치만 실행할 때 사용하는 명령어다.
 
+## Purdue 수업 템플릿과 같은 실행법
+
+수업 실습에서 사용한 명명 규칙과 동일하게 실행할 수 있다.
+
+```bash
+make sim_interlock_controller_src
+```
+
+문법은 `make sim_<모듈명>_src`이며, 위 명령은 다음 두 파일을 자동으로 사용한다.
+
+```text
+rtl/interlock_controller.sv
+tb/interlock_controller_tb.sv
+```
+
+RTL lint도 수업식 명령으로 실행한다.
+
+```bash
+make vlint_interlock_controller
+```
+
+기존의 짧은 별칭도 유지된다.
+
+```bash
+make test
+make lint
+```
+
 ## 가장 빠른 실행
 
 Linux 터미널에서:
