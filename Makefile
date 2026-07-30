@@ -14,7 +14,7 @@ test:
 	vvp $(BUILD)/interlock_tb
 
 lint:
-	verilator --lint-only -Wall -Wno-UNUSEDSIGNAL --top-module $(TOP) $(RTL)
+	verilator --lint-only -Wall --top-module $(TOP) $(RTL)
 
 $(JSON): $(RTL)
 	mkdir -p $(BUILD)
