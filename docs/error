@@ -66,5 +66,37 @@ make: *** [Makefile:17: lint] Error 1
 ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
 mkdir -p build
 yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
-rtl/interlock_controller.sv:4: ERROR: syntax error, unexpected TOK_LOGIC, expecting TOK_ID or TOK_INTEGERor TOK_SIGNED or '['
+rtl/interlock_controller.sv:4: ERROR: syntax error, unexpected TOK_LOGIC, expecting TOK_ID or TOK_INTEGER or TOK_SIGNED or '['
 make: *** [Makefile:21: build/interlock_demo.json] Error 1
+ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
+ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
+ecng039@ecelnx09:~/Desktop/kiat_project$ ^C
+ecng039@ecelnx09:~/Desktop/kiat_project$ git pull origin main
+From https://github.com/sangmin415/kiat_project
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+ecng039@ecelnx09:~/Desktop/kiat_project$ make clean
+rm -rf build
+ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
+mkdir -p build
+yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
+rtl/interlock_controller.sv:17: ERROR: syntax error, unexpected TOK_LOGIC
+make: *** [Makefile:21: build/interlock_demo.json] Error 1
+ecng039@ecelnx09:~/Desktop/kiat_project$ make test
+mkdir -p build
+iverilog -g2012 -o build/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
+vvp build/interlock_tb
+VCD info: dumpfile build/interlock_controller.vcd opened for output.
+PASS: interlock_controller_tb
+ecng039@ecelnx09:~/Desktop/kiat_project$ make cram
+mkdir -p build
+yosys -q -p "read_verilog -sv rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv; synth_ice40 -top top_board_demo; write_json build/interlock_demo.json"
+nextpnr-ice40 --hx8k --package ct256 --pcf constraints/ece270_rev2.pcf --json build/interlock_demo.json --asc build/interlock_demo.asc
+make: nextpnr-ice40: No such file or directory
+make: *** [Makefile:24: build/interlock_demo.asc] Error 127
+ecng039@ecelnx09:~/Desktop/kiat_project$ make sim_interlock_controller_src
+Compiling interlock_controller source simulation...
+Running interlock_controller testbench...
+VCD info: dumpfile build/interlock_controller.vcd opened for output.
+PASS: interlock_controller_tb
+Simulation complete. VCD: build/interlock_controller.vcd

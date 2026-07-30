@@ -14,9 +14,11 @@ module interlock_controller #(
     output logic       motor_enable,
     output logic       event_latched
 );
-    localparam logic [1:0] NORMAL = 2'd0;
-    localparam logic [1:0] WARN   = 2'd1;
-    localparam logic [1:0] TRIP   = 2'd2;
+    // Keep these untyped for compatibility with the older Yosys release
+    // installed on the ECE270 lab machines.
+    localparam [1:0] NORMAL = 2'd0;
+    localparam [1:0] WARN   = 2'd1;
+    localparam [1:0] TRIP   = 2'd2;
 
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -44,4 +46,3 @@ module interlock_controller #(
 endmodule
 
 `default_nettype wire
-
