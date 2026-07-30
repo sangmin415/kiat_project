@@ -36,7 +36,7 @@ module interlock_controller_tb;
         reset = 1; @(posedge clk); @(negedge clk); reset = 0;
         check(2'd0, 1'b1, "RESET");
 
-        transient_event = 1; @(posedge clk); transient_event = 0;
+        transient_event = 1; @(posedge clk); @(negedge clk); transient_event = 0;
         check(2'd2, 1'b0, "ESD_SIM TRIP");
         if (!event_latched) $fatal(1, "event_latched was not set");
 
