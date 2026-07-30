@@ -1,204 +1,189 @@
 # FPGA-RISC-V Photo Process Interlock
 
-FPGA와 RISC-V CPU, PC 기반 이상 탐지를 결합해 포토 공정 마스크 스테이지의 **위치 오차·진동 이상·비정상 이벤트**를 모사하고 감시하는 프로젝트입니다.
+ADXL345로 실제 진동을 측정하고, RC 미분기 기반의 저전압 과도 이벤트를 모사해 FPGA-RISC-V 시스템의 인터록 동작을 검증하는 프로젝트입니다.
 
-> 이 프로젝트는 실제 ESD 계측기나 마스크 결함 검사 장비가 아닙니다. 로터리 엔코더와 버튼, 가속도 센서를 이용해 공정 설비에서 발생할 수 있는 위치 오차·진동·비정상 이벤트를 모사하는 교육용 데모입니다.
+> 실제 ESD 방전이나 마스크 결함을 검출하는 장비가 아닙니다. 실제 진동 데이터와 ESD 유사 과도 이벤트의 **안전한 저전압 모사**를 이용해 포토 공정 정밀 장비의 상태 감시·인터록 개념을 구현합니다.
 
-## 1. 프로젝트 목표
+## 목표
 
-- 로터리 엔코더로 마스크 스테이지의 상대 위치 오차 모사
-- ADXL345 가속도 센서로 장비 진동 데이터 수집
-- 이벤트 버튼으로 ESD와 같은 비정상 이벤트 상황 모사
-- FPGA 하드웨어가 임계치 초과를 즉시 감지해 인터록 수행
-- RISC-V CPU가 MMIO로 설비 상태를 읽고 UART로 PC에 전송
-- PC 대시보드가 FDC 형태의 실시간 그래프와 이벤트 로그 표시
-- Isolation Forest가 정상 패턴에서 벗어난 이상 징후를 조기 경고
+- 진동 모터가 발생시키는 실제 진동을 ADXL345 3축 가속도 센서로 수집
+- FPGA에서 진동 임계치와 과도 이벤트를 감시하고 즉시 인터록 수행
+- RISC-V CPU가 MMIO로 상태를 읽고 8개 이동 평균 전처리 후 UART 전송
+- PC가 FDC 형태의 실시간 그래프, CSV 로그, SPC 관리도와 AI 조기 경고를 제공
+- FPGA가 CPU·PC와 독립적으로 모터 드라이버 Enable을 차단
 
-## 2. 시스템 구조
+## 시스템 구조
 
 ```text
-로터리 엔코더 ── 위치 변화 ──┐
-ADXL345 ─────── X/Y/Z 진동 ──┼──> FPGA RTL
-이벤트 버튼 ── 비정상 이벤트 ┘      ├─ 입력 동기화 및 디바운스
-                                   ├─ 엔코더 디코딩
-                                   ├─ 센서 샘플 수집
-                                   ├─ 이벤트 래치
-                                   ├─ 임계치 비교
-                                   └─ 즉시 인터록
-                                            │ MMIO
-                                            v
-                                      RISC-V CPU
-                                   상태 읽기 및 UART 전송
-                                            │
-                                            v
-                                         PC 대시보드
-                                   실시간 그래프 및 AI 경고
+진동 모터 ── 실제 진동 ──> ADXL345
+                              │ I2C
+                              v
+                        FPGA RTL
+                  ┌─────┼───────────────┐
+                  │     │               │
+              즉시 인터록  MMIO       LED / 7-segment
+                  │     │
+                  │     v
+                  │  RISC-V CPU
+                  │  8-sample moving average
+                  │     │ UART
+                  │     v
+                  └──> PC FDC / SPC / AI dashboard
 
-FPGA 인터록 출력 ──> LED / 부저 / 모터 드라이버 Enable OFF
+외부 ESD_SIM 버튼 → RC 미분기 → 슈미트 트리거 → FPGA 이벤트 래치
 ```
 
-## 3. 역할 분담
+## 동작 시나리오
 
-| 구성 | 역할 |
-|---|---|
-| FPGA RTL | 빠른 입력 감시, 이벤트 래치, 임계치 비교, 즉시 인터록 |
-| RISC-V CPU | MMIO 상태 읽기, 상태 패킷 구성, UART 전송 |
-| PC AI | 정상 패턴 학습, 위치·진동 이상 징후 판정 |
-| PC 대시보드 | 실시간 그래프, 상태 표시, 이벤트 로그 저장 |
+| 상태 | 입력 조건 | FPGA 출력 | PC 표시 |
+|---|---|---|---|
+| `NORMAL` | 일정한 정상 진동 | 모터 Enable 유지, 정상 LED | 정상 그래프 |
+| `WARNING` | 진동 수준 증가 | 경고 LED | SPC Warning |
+| `AI WARNING` | 정상 진동 패턴 이탈 | 출력 유지 | AI Warning |
+| `INTERLOCK` | 절대 진동 임계치 초과 | LED/7-segment 경고, 모터 OFF | Vibration Interlock |
+| `ESD_SIM` | RC 과도 이벤트 입력 | 이벤트 래치, 모터 OFF | ESD_SIM_EVENT 로그 |
 
-AI 또는 CPU가 응답하지 않아도 하드웨어 임계치를 넘으면 FPGA가 독립적으로 인터록을 수행하도록 설계합니다.
+SPC와 AI는 조기 경고 역할만 맡습니다. 실제 모터 차단은 FPGA 하드웨어 임계치와 이벤트 래치가 수행합니다.
 
-## 4. 대상 하드웨어
+## 하드웨어
 
-- Lattice iCE40HX-8K Breakout Board
-- iCE40HX8K-CT256 FPGA
-- 12 MHz 온보드 클록
-- 3.3 V GPIO
-- J2 2x20 사용자 헤더
-- 온보드 LED 8개
+### Purdue ECE270 FPGA Breakout Board
 
-### 추가 부품
+- iCE40HX-8K FPGA와 12 MHz 클록
+- 8자리 7-segment
+- 20개 내장 푸시버튼
+- 내장 LED와 RGB LED
+- UART
+- 외부 GPIO 헤더
 
-- 로터리 엔코더 1개
-- 이벤트 버튼 및 리셋 버튼
-- ADXL345 3축 가속도 센서 모듈
-- 패시브 부저
-- 브레드보드 및 점퍼선
-- 선택: 소형 DC 모터와 3.3 V 로직 호환 모터 드라이버
+### 외부 부품
 
-모터는 FPGA GPIO에 직접 연결하지 않고 별도 모터 드라이버의 Enable 입력만 제어합니다.
+- ADXL345 3축 가속도 센서
+- ERM 진동 모터
+- MOSFET 모터 드라이버
+- 2xAA 배터리 홀더와 AA 배터리 2개
+- 브레드보드 및 female-to-male 점퍼선
+- 피에조 부저
+- ESD_SIM 회로: 택트 스위치, 저항·커패시터, 74LVC1G14 또는 74HC14 슈미트 트리거, 0.1uF 디커플링 커패시터
 
-## 5. 상태 및 인터록
+모터는 FPGA GPIO에 직접 연결하지 않습니다. 외부 배터리 전원과 MOSFET 드라이버를 사용하고, FPGA는 드라이버의 Enable/PWM 신호만 제어합니다.
 
-| 상태 | 조건 | 동작 |
-|---|---|---|
-| `NORMAL` | 위치·진동이 정상 범위 | 정상 LED, 모터 Enable 유지 |
-| `WARNING` | 경고 기준 이상, 인터록 기준 미만 | 경고 LED 및 느린 부저 |
-| `AI WARNING` | PC 모델이 정상 패턴 이탈 감지 | 대시보드 경고 및 로그 저장 |
-| `INTERLOCK` | 위치 임계치 초과, 강한 충격 또는 이벤트 발생 | 빨간 LED, 빠른 부저, 모터 Enable 차단 |
+## ESD_SIM 입력
 
-AI 판정만으로 안전 출력을 차단하지 않습니다. 즉시 차단 조건은 FPGA RTL에 구현합니다.
+실제 스파크를 만들지 않습니다.
 
-## 6. FPGA 구현 계획
+```text
+3.3V 버튼 입력
+→ RC 미분기: 짧은 저전압 과도 펄스 생성
+→ 슈미트 트리거: 안전한 0/3.3V 디지털 이벤트로 정형
+→ FPGA GPIO
+→ 이벤트 래치 및 즉시 인터록
+```
+
+RC 출력은 FPGA GPIO에 직접 연결하지 않습니다. 슈미트 트리거의 3.3V 출력만 FPGA 입력으로 사용합니다.
+
+## FPGA RTL
 
 ```text
 rtl/
   top_interlock.sv
-  encoder_decoder.sv
-  button_sync_debounce.sv
-  event_latch.sv
+  adxl345_i2c_master.sv
   vibration_monitor.sv
+  button_sync_debounce.sv
+  transient_event_latch.sv
   interlock_controller.sv
-  warning_buzzer.sv
+  motor_pwm.sv
+  seven_segment_status.sv
   uart_tx.sv
   mmio_interlock.sv
 
 tb/
-  encoder_decoder_tb.sv
-  event_latch_tb.sv
+  vibration_monitor_tb.sv
+  transient_event_latch_tb.sv
   interlock_controller_tb.sv
   uart_tx_tb.sv
   top_interlock_tb.sv
 ```
 
-부품이 도착하기 전에는 테스트벤치가 엔코더 A/B상, 버튼 바운스, 위치 오차, 진동 샘플을 가상 입력으로 생성합니다.
+### FPGA 역할
 
-### 우선 검증 항목
+- ADXL345 I2C 수신과 진동 수준 레지스터화
+- 짧은 과도 이벤트의 입력 동기화·이벤트 래치
+- 강한 진동 또는 ESD_SIM 이벤트 시 즉시 인터록
+- 내장 LED·7-segment·RGB LED 상태 출력
+- 모터 드라이버 Enable/PWM 제어
+- CPU 또는 PC로 보낼 상태 데이터 제공
 
-- 엔코더 정방향·역방향 카운트
-- 버튼 바운스가 이벤트 한 번으로 처리되는지 확인
-- 이벤트 상태가 리셋 전까지 유지되는지 확인
-- 위치 또는 진동 임계치 초과 시 인터록 발생
-- 인터록 시 부저·LED·모터 Enable 출력 확인
-- 리셋 후 정상 상태 복귀
-- UART 패킷과 전송 타이밍 검증
-- iCE40HX-8K 합성 및 자원 사용량 확인
+## RISC-V CPU와 MMIO
 
-## 7. RISC-V 및 MMIO 계획
-
-초기 구현은 인터럽트와 C 런타임 없이 RV32I 어셈블리 polling 방식으로 진행합니다.
+초기 구현은 RV32I 어셈블리 polling 방식으로 진행합니다.
 
 ```text
-0x8000_0000 : POSITION_ERROR  (read)
-0x8000_0004 : EVENT_STATUS    (read)
-0x8000_0008 : VIBRATION_LEVEL (read)
-0x8000_000C : INTERLOCK       (read)
-0x8000_0010 : THRESHOLD       (read/write)
-0x8000_0014 : CONTROL         (write)
-0x8000_0018 : UART_TX         (write)
+0x8000_0000 : VIBRATION_SAMPLE  (read)
+0x8000_0004 : VIBRATION_LEVEL   (read)
+0x8000_0008 : EVENT_STATUS      (read)
+0x8000_000C : INTERLOCK         (read)
+0x8000_0010 : THRESHOLD         (read/write)
+0x8000_0014 : CONTROL           (write)
+0x8000_0018 : UART_TX           (write)
 ```
 
-CPU 통합 전에도 FPGA 단독 인터록과 UART 송신이 동작하는 MVP를 먼저 완성합니다. RISC-V 통합은 CPU 검증이 완료된 뒤 추가합니다.
-
-## 8. PC 대시보드와 AI
-
-UART는 초기 안정성을 위해 9,600 bps로 시작하고 약 100 ms마다 상태를 전송합니다.
+CPU는 최근 8개 진동값을 합산하고 3비트 시프트해 이동 평균을 계산합니다.
 
 ```text
-time_ms,position_error,vibration_level,event_latched,interlock
-1200,2,7,0,0
-1300,5,10,0,0
-1400,11,28,0,1
+moving_average = (sample[0] + ... + sample[7]) >> 3
 ```
 
-대시보드는 다음을 표시합니다.
+C 런타임과 인터럽트는 CPU 기본 검증이 끝난 뒤 확장합니다. CPU 통합 전에도 FPGA 단독 인터록과 UART 송신이 동작하는 MVP를 먼저 완성합니다.
 
-- 위치 오차 실시간 그래프
-- X/Y/Z 진동 및 진동 수준 그래프
-- 경고·인터록 기준선
-- `NORMAL`, `WARNING`, `AI WARNING`, `INTERLOCK` 상태
-- 이벤트 발생 시간과 원인
-- CSV 로그 저장
+## PC FDC / SPC / AI
 
-AI는 노트북 CPU에서 동작하는 Isolation Forest를 사용합니다. 1초 구간마다 다음 특징을 계산합니다.
+UART는 초기에는 9,600 bps, 약 100ms 주기로 상태를 전송합니다.
 
-- 평균 및 최대 위치 오차
-- 위치 변화량과 방향 전환 횟수
-- 진동 RMS, 표준편차, 최댓값
-- 이벤트 발생 여부
+```text
+time_ms,vibration_level,event_latched,interlock
+1200,7,0,0
+1300,10,0,0
+1400,28,0,1
+1500,8,1,1
+```
 
-AI는 조기 경고를 담당하고 FPGA 하드웨어 인터록은 독립적으로 유지합니다.
+PC 대시보드 기능:
 
-## 9. 구현 우선순위
+- X/Y/Z 진동 및 전처리 진동 수준 그래프
+- CSV 자동 저장과 이벤트 로그
+- 정상 데이터 기반 SPC 관리도
+- CL, UCL = mu + 3sigma, LCL = max(0, mu - 3sigma)
+- Isolation Forest 기반 AI 조기 경고
+- `NORMAL`, `WARNING`, `AI WARNING`, `INTERLOCK`, `ESD_SIM` 표시
 
-### MVP
+## 구현 순서
 
-1. 엔코더와 이벤트 버튼의 가상 입력 테스트벤치
-2. FPGA 위치 카운터·이벤트 래치·인터록
-3. LED·부저·모터 Enable 출력
-4. UART 송신
-5. PC 실시간 그래프
+1. 가상 진동·과도 이벤트 테스트벤치 작성
+2. FPGA 인터록, LED, 7-segment, 모터 Enable RTL 검증
+3. UART와 Python 가상 FDC 대시보드 구현
+4. ADXL345 I2C 실제 연결
+5. 진동 모터와 MOSFET 드라이버 실제 연결
+6. RC 미분기와 슈미트 트리거 ESD_SIM 입력 연결
+7. RISC-V MMIO와 8-sample 이동 평균 연동
+8. SPC·AI 대시보드 통합
 
-### 확장
+## 시연
 
-6. ADXL345 실제 센서 연결
-7. Isolation Forest 이상 징후 경고
-8. RISC-V MMIO 및 UART 연동
-9. 실제 모터 드라이버 Enable 제어
+1. 일정한 진동 모터 동작에서 `NORMAL` 상태와 기준 데이터를 확인합니다.
+2. 모터 진동을 크게 또는 불규칙하게 만들어 SPC/AI 경고를 확인합니다.
+3. 절대 진동 임계치를 넘겨 FPGA 하드웨어 인터록과 모터 OFF를 확인합니다.
+4. ESD_SIM 버튼을 눌러 과도 이벤트 래치, 7-segment `E`, 모터 차단과 PC 로그를 확인합니다.
+5. 내장 리셋 버튼으로 안전 상태에서만 정상 복귀합니다.
 
-## 10. 5일 구현 일정
+## 포트폴리오 표현
 
-| 일차 | 목표 | 완료 기준 |
-|---|---|---|
-| 1일차 | 엔코더·버튼·인터록 RTL 및 테스트벤치 | 모든 기본 테스트 통과 |
-| 2일차 | UART 송신과 PC 가상 FDC 대시보드 | 가상 데이터 실시간 표시 |
-| 3일차 | FPGA 보드 합성·LED·부저 검증 | 보드 출력 정상 동작 |
-| 4일차 | ADXL345·AI 또는 RISC-V 연동 | 핵심 확장 기능 하나 이상 완료 |
-| 5일차 | 통합 시연, 로그, 문서 및 영상 | 정상·경고·인터록 시나리오 재현 |
+> ADXL345 기반 실제 진동 데이터를 FPGA로 수집하고, RISC-V CPU에서 8-sample 이동 평균 전처리를 수행했다. RC 미분기와 슈미트 트리거를 활용해 ESD 유사 과도 이벤트를 안전한 저전압 신호로 모사하고, FPGA 하드웨어 인터록 및 PC 기반 SPC·AI 대시보드와 연동했다.
 
-## 11. 시연 시나리오
+## 현재 상태
 
-1. 정상 위치·진동에서 `NORMAL` 상태를 확인합니다.
-2. 엔코더를 천천히 이동해 `WARNING` 상태를 발생시킵니다.
-3. 엔코더를 빠르게 앞뒤로 움직이거나 진동을 가해 `AI WARNING`을 확인합니다.
-4. 임계치를 넘기거나 이벤트 버튼을 누르면 FPGA가 즉시 `INTERLOCK`을 수행합니다.
-5. LED와 부저, 모터 Enable 차단을 확인합니다.
-6. PC 그래프와 CSV 로그에서 발생 시점과 원인을 확인합니다.
-
-## 12. 현재 상태
-
-- 프로젝트 범위 및 시스템 구조 확정
-- iCE40HX-8K 보드 문서와 3.3 V GPIO 조건 확인
+- 프로젝트 범위와 시스템 구조 확정
+- Purdue ECE270 FPGA Breakout Board와 iCE40HX-8K 제약 파일 확인
 - FPGA 시뮬레이션·합성 도구 확인
 - 하드웨어 부품 주문 전
-- RTL, 테스트벤치, PC 프로그램은 이후 단계에서 구현 예정
+- RTL, 테스트벤치, PC 대시보드는 구현 예정
