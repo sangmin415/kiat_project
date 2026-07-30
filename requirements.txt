@@ -1,8 +1,0 @@
-# Local PC: CPU-only simulation, inference, and UART communication
-numpy==2.3.3
-torch==2.8.0
-torchvision==0.23.0
-pygame==2.6.1
-opencv-python==5.0.0.93
-pyserial==3.5
-ultralytics==8.4.111
