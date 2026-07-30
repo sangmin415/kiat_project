@@ -1,6 +1,0 @@
-.venv/
-.runtime/
-__pycache__/
-*.py[cod]
-runs/
-outputs/
