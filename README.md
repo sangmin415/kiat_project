@@ -183,6 +183,7 @@ PC 대시보드 기능:
 
 ## 문서
 
+- [테스트벤치 명령어 모음집](docs/COMMANDS_KO.md)
 - [Linux PC 기반 FPGA 빌드·업로드·시험 가이드](docs/FPGA_TEST_GUIDE_KO.md)
 - [코드 구성 및 기능 설명서](docs/CODE_REFERENCE_KO.md)
 - [영문 FPGA 사전 테스트 가이드](docs/FPGA_TEST_GUIDE.md)
