@@ -65,7 +65,9 @@ vlint_%:
 
 $(JSON): $(RTL)
 	mkdir -p $(BUILD)
-	yosys -q -p "read_verilog -sv $(RTL); synth_ice40 -top $(TOP); write_json $(JSON)"
+	# New Yosys versions export debug-only $scopeinfo cells by default. The lab's
+	# older nextpnr does not understand them, so omit them from the JSON netlist.
+	yosys -q -p "read_verilog -sv $(RTL); synth_ice40 -top $(TOP); write_json -noscopeinfo $(JSON)"
 
 $(ASC): $(JSON) $(PCF)
 	nextpnr-ice40 --hx8k --package ct256 --pcf $(PCF) --json $(JSON) --asc $(ASC)
