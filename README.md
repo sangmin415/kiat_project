@@ -183,6 +183,7 @@ PC 대시보드 기능:
 
 ## 문서
 
+- [부품 없이 진행하는 FPGA 인터록 데모](docs/NO_PARTS_FPGA_DEMO_KO.md)
 - [테스트벤치 명령어 모음집](docs/COMMANDS_KO.md)
 - [Linux PC 기반 FPGA 빌드·업로드·시험 가이드](docs/FPGA_TEST_GUIDE_KO.md)
 - [코드 구성 및 기능 설명서](docs/CODE_REFERENCE_KO.md)
