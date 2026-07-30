@@ -1,3 +1,0 @@
-VCD info: dumpfile build/interlock_controller.vcd opened for output.
-PASS: interlock_controller_tb
-tb/interlock_controller_tb.sv:49: $finish called at 110000 (1ps)

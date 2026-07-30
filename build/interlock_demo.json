@@ -10077,23 +10077,6 @@
             "R": [ 3 ]
           }
         },
-        "controller": {
-          "hide_name": 0,
-          "type": "$scopeinfo",
-          "parameters": {
-            "TYPE": "module"
-          },
-          "attributes": {
-            "cell_module_not_derived": "00000000000000000000000000000001",
-            "cell_src": "rtl/top_board_demo.sv:22.26-32.6",
-            "module": "interlock_controller",
-            "module_src": "rtl/interlock_controller.sv:3.1-46.10"
-          },
-          "port_directions": {
-          },
-          "connections": {
-          }
-        },
         "controller.motor_enable_SB_LUT4_O": {
           "hide_name": 0,
           "type": "SB_LUT4",
@@ -10117,23 +10100,6 @@
             "I2": [ 14 ],
             "I3": [ 12 ],
             "O": [ 11 ]
-          }
-        },
-        "display": {
-          "hide_name": 0,
-          "type": "$scopeinfo",
-          "parameters": {
-            "TYPE": "module"
-          },
-          "attributes": {
-            "cell_module_not_derived": "00000000000000000000000000000001",
-            "cell_src": "rtl/top_board_demo.sv:34.26-38.6",
-            "module": "seven_segment_status",
-            "module_src": "rtl/seven_segment_status.sv:3.1-17.10"
-          },
-          "port_directions": {
-          },
-          "connections": {
           }
         },
         "green_SB_DFFS_Q": {
