@@ -36,5 +36,19 @@ cram: $(BIN)
 flash: $(BIN)
 	iceprog $(BIN)
 
+# Purdue ECE270 template-compatible commands.
+.PHONY: sim_%_src vlint_%
+sim_%_src:
+	@echo "Compiling $* source simulation..."
+	@mkdir -p $(BUILD)
+	@iverilog -g2012 -o $(BUILD)/$*_tb rtl/$*.sv tb/$*_tb.sv
+	@echo "Running $* testbench..."
+	@vvp $(BUILD)/$*_tb
+	@echo "Simulation complete. VCD: $(BUILD)/$*.vcd"
+
+vlint_%:
+	@verilator --lint-only -Wall --top-module $* rtl/$*.sv
+	@echo "No linting errors found for $*."
+
 clean:
 	rm -rf $(BUILD)
