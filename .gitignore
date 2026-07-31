@@ -1,0 +1,5 @@
+build/
+logs/
+vvp_sim.log
+__pycache__/
+*.pyc
