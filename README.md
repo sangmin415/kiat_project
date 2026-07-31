@@ -1,5 +1,7 @@
 # FPGA-RISC-V Photo Process Interlock
 
+> **최신 구현 기준:** 센서는 BNO085, 구동부는 편심 모터 1개와 DRV8833을 사용하며 Python 랜덤 PWM Fault Injection으로 시험합니다. 상세 내용은 [BNO085 단일 모터 인터록 계획](docs/BNO085_MOTOR_INTERLOCK_PLAN_KO.md)을 기준으로 합니다.
+
 ADXL345로 실제 진동을 측정하고, RC 미분기 기반의 저전압 과도 이벤트를 모사해 FPGA-RISC-V 시스템의 인터록 동작을 검증하는 프로젝트입니다.
 
 > 실제 ESD 방전이나 마스크 결함을 검출하는 장비가 아닙니다. 실제 진동 데이터와 ESD 유사 과도 이벤트의 **안전한 저전압 모사**를 이용해 포토 공정 정밀 장비의 상태 감시·인터록 개념을 구현합니다.
