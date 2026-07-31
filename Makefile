@@ -15,7 +15,7 @@ JSON := $(BUILD)/interlock_demo.json
 ASC := $(BUILD)/interlock_demo.asc
 BIN := $(BUILD)/interlock_demo.bin
 
-.PHONY: test test_uart sim lint check_env synth bitstream cram flash clean
+.PHONY: test test_uart test_command sim lint check_env synth bitstream cram flash clean
 
 test:
 	mkdir -p $(BUILD)
@@ -23,11 +23,18 @@ test:
 	vvp $(BUILD)/interlock_tb
 	iverilog -g2012 -o $(BUILD)/uart_echo_tb rtl/uart_echo.sv tb/uart_echo_tb.sv
 	vvp $(BUILD)/uart_echo_tb
+	iverilog -g2012 -s top_board_uart_demo_tb_v2 -o $(BUILD)/uart_command_tb $(RTL) tb/top_board_uart_command_tb.sv
+	vvp $(BUILD)/uart_command_tb
 
 test_uart:
 	mkdir -p $(BUILD)
 	iverilog -g2012 -o $(BUILD)/uart_echo_tb rtl/uart_echo.sv tb/uart_echo_tb.sv
 	vvp $(BUILD)/uart_echo_tb
+
+test_command:
+	mkdir -p $(BUILD)
+	iverilog -g2012 -s top_board_uart_demo_tb_v2 -o $(BUILD)/uart_command_tb $(RTL) tb/top_board_uart_command_tb.sv
+	vvp $(BUILD)/uart_command_tb
 
 # Convenient short alias. It executes the course-template target below.
 sim: sim_interlock_controller_src
