@@ -185,6 +185,7 @@ PC 대시보드 기능:
 
 ## 문서
 
+- [FPGA UART 실물 통신 시험 가이드](docs/UART_HARDWARE_TEST_KO.md)
 - [BNO085 기반 모터 진동 모니터링 및 FPGA 인터록 구현 계획](docs/BNO085_MOTOR_INTERLOCK_PLAN_KO.md)
 - [부품 없이 진행하는 FPGA 인터록 데모](docs/NO_PARTS_FPGA_DEMO_KO.md)
 - [테스트벤치 명령어 모음집](docs/COMMANDS_KO.md)
