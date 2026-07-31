@@ -193,6 +193,29 @@ PC 대시보드 기능:
 - [코드 구성 및 기능 설명서](docs/CODE_REFERENCE_KO.md)
 - [영문 FPGA 사전 테스트 가이드](docs/FPGA_TEST_GUIDE.md)
 
+## 현재 보드만으로 실행하는 UART/Pygame 데모
+
+센서와 모터가 없어도 PC와 FPGA만으로 전체 제어 흐름을 확인할 수 있습니다.
+
+```powershell
+git pull origin main
+& "$env:LOCALAPPDATA\\Programs\\Python\\Python311\\python.exe" .\\pc\\pygame_demo.py --port COM12
+```
+
+Pygame의 `RUN NORMAL`, `WARNING`, `STRONG VIB`, `ESD_SIM`, `RESET`, `STOP` 버튼은 COM12로 FPGA에 명령을 전송합니다. FPGA는 인터록 상태를 직접 결정하고, Pygame은 200 ms마다 상태를 조회해 화면을 갱신합니다. 좌측 테스트 리그는 PWM/진동 상태에 따라 회전·진동하고 인터록 발생 후 감속 정지합니다. BNO085가 없는 현재의 X/Y/Z 및 진동 그래프는 명확히 표시된 시뮬레이션 값입니다.
+
+| 바이트 | 기능 |
+|---|---|
+| `0x10` | 정상 운전 |
+| `0x11` | 경고 진동 모사 |
+| `0x12` | 강진동 인터록 모사 |
+| `0x13` | ESD_SIM 인터록 |
+| `0x14` | 인터록 리셋 후 정지 |
+| `0x15` | 운전자 정지 |
+| `0xF0` | FPGA 상태 조회 |
+
+RTL 검증은 `make test_command`, 전체 테스트는 `make test`로 실행합니다.
+
 ## 현재 상태
 
 - 인터록 FSM, 상태 표시 RTL 구현
