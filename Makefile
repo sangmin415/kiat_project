@@ -8,19 +8,26 @@ export LD_LIBRARY_PATH := /home/shay/a/ece270/lib:$(LD_LIBRARY_PATH)
 
 SHELL := bash
 BUILD := build
-RTL := rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/top_board_demo.sv
+RTL := rtl/interlock_controller.sv rtl/seven_segment_status.sv rtl/seven_segment_hex.sv rtl/uart_echo.sv rtl/top_board_demo.sv
 PCF := constraints/ece270_rev2.pcf
 TOP := top_board_demo
 JSON := $(BUILD)/interlock_demo.json
 ASC := $(BUILD)/interlock_demo.asc
 BIN := $(BUILD)/interlock_demo.bin
 
-.PHONY: test sim lint check_env synth bitstream cram flash clean
+.PHONY: test test_uart sim lint check_env synth bitstream cram flash clean
 
 test:
 	mkdir -p $(BUILD)
 	iverilog -g2012 -o $(BUILD)/interlock_tb rtl/interlock_controller.sv tb/interlock_controller_tb.sv
 	vvp $(BUILD)/interlock_tb
+	iverilog -g2012 -o $(BUILD)/uart_echo_tb rtl/uart_echo.sv tb/uart_echo_tb.sv
+	vvp $(BUILD)/uart_echo_tb
+
+test_uart:
+	mkdir -p $(BUILD)
+	iverilog -g2012 -o $(BUILD)/uart_echo_tb rtl/uart_echo.sv tb/uart_echo_tb.sv
+	vvp $(BUILD)/uart_echo_tb
 
 # Convenient short alias. It executes the course-template target below.
 sim: sim_interlock_controller_src
