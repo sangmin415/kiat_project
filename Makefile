@@ -74,7 +74,7 @@ $(JSON): $(RTL)
 	mkdir -p $(BUILD)
 	# Remove debug-only scope metadata for compatibility with older nextpnr.
 	# This command works with both the older WSL Yosys and newer Purdue Yosys.
-	yosys -q -p 'read_verilog -sv $(RTL); synth_ice40 -top $(TOP); delete t:$scopeinfo; write_json $(JSON)'
+	yosys -q -p 'read_verilog -sv $(RTL); synth_ice40 -top $(TOP); delete t:$$scopeinfo; write_json $(JSON)'
 
 $(ASC): $(JSON) $(PCF)
 	nextpnr-ice40 --hx8k --package ct256 --pcf $(PCF) --json $(JSON) --asc $(ASC)
