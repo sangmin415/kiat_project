@@ -1,0 +1,4 @@
+# BNO085 UART-RVC stage-1 bridge for the ECE270 keypad carrier.
+set_io hwclk   J3
+set_io bno_rxc R1
+set_io Tx      B12
