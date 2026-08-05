@@ -42,13 +42,14 @@ PC 대시보드는 FPGA가 그대로 forward한 RVC 프레임을 읽는다. 그�
 | 기능 | 보드 위치/패키지 핀 | 연결 대상 |
 |---|---|---|
 | 12 MHz clock | J3 | 보드 내장 클록 |
-| BNO RVC RX | J6 I0 / C3 | BNO085 SDA (UART-RVC TX), carrier inversion 보정 |
+| BNO RVC RX | J6 I0 / C3 | BNO085 SDA (UART-RVC TX), 표준 UART 정상 극성 |
 | A 영점 버튼 | keypad A / C6 | 보드 내장 버튼 |
 | PC UART TX | B12 | FTDI/PC |
 | R0 PWM | B2 | Roll servo signal (yellow/orange) |
 | R1 PWM | D1 | Pitch servo signal |
 | R2 PWM | H1 | Yaw servo signal |
 | Green status | T9 | 보드 RGB green |
+| Red status | P8 | 센서 프레임 timeout |
 
 실제 배선 전원은 모두 끈 상태에서 한다. `constraints/bno085_3axis_cpu.pcf`가 이 표의 단일 기준이다.
 
@@ -68,7 +69,7 @@ Adafruit BNO085 breakout 기준:
 
 P0/P1 설정은 **전원을 넣기 전**에 고정한다. 이 구현은 I2C 모드가 아니며, BNO085의 UART-RVC 출력이 SDA 핀에 나온다는 전제를 사용한다.
 
-보드 carrier 때문에 C3 수신을 RTL에서 반전한다. 다른 GPIO로 옮기면 PCF와 `.Rx(~bno_rxc)` 극성을 함께 검증해야 한다.
+C3 수신은 표준 UART처럼 Idle High, Start Low이며 RTL에서 `.Rx(bno_rxc)`로 직접 받는다. 다른 GPIO로 옮기면 PCF와 실제 핀의 Idle/Start 극성을 오실로스코프로 검증한다.
 
 ## 5. 서보와 외부 전원
 
@@ -104,10 +105,10 @@ SG90/MS18급 3선 서보:
 펌웨어 제어식:
 
 ```text
-servo_ticks = clamp(18000 - (angle_cd - zero_cd), 13200, 22800)
+servo_ticks = clamp(18000 - ((angle_cd - zero_cd) * 17 / 32), 13200, 22800)
 ```
 
-12 MHz에서 `18000 tick = 1.50 ms`이다. 현재는 센서 1 centidegree에 PWM 1 tick을 대응한다. 기구 조립 뒤 한 축이 반대로 움직이면 해당 축의 부호만 바꾼다.
+12 MHz에서 `18000 tick = 1.50 ms`이다. 기본 P 스케일은 1 centidegree당 `17/32 tick`(1도당 약 53.125 tick)이며, 펌웨어의 `KP_NUMERATOR`와 `KP_DENOMINATOR`로 튜닝한다. 기구 조립 뒤 한 축이 반대로 움직이면 해당 축의 부호만 바꾼다.
 
 ## 7. 빌드와 업로드
 
@@ -115,10 +116,10 @@ WSL에서 다음을 실행한다.
 
 ```bash
 cd /mnt/c/kiat_project
-make -f Makefile.gimbal gimbal-firmware RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-make -f Makefile.gimbal gimbal-lint     RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-make -f Makefile.gimbal gimbal-bitstream RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-make -f Makefile.gimbal gimbal-cram      RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
+make -f Makefile.gimbal gimbal-firmware
+make -f Makefile.gimbal gimbal-lint
+make -f Makefile.gimbal gimbal-bitstream
+make -f Makefile.gimbal gimbal-cram
 ```
 
 `gimbal-cram`은 `iceprog -S`를 사용한다. 즉 전원 제거 후에는 사라진다. `gimbal-flash`은 보드 점퍼가 Flash configuration에 맞을 때만 사용하고, 먼저 CRAM에서 동작을 확인한다.
