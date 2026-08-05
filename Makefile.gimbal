@@ -1,0 +1,45 @@
+# BNO085 UART-RVC + RV32I 3-axis gimbal build (Purdue ECE270 iCE40HX8K).
+# Usage in WSL:
+#   make -f Makefile.gimbal gimbal-bitstream RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
+#   make -f Makefile.gimbal gimbal-cram      RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
+RISCVMOVE_ROOT ?= /mnt/c/2132132/riscvmove
+BUILD_GIMBAL := build/gimbal
+TOP_GIMBAL := top_riscv_bno_3axis_cpu
+PCF_GIMBAL := constraints/bno085_3axis_cpu.pcf
+GIMBAL_RTL := $(RISCVMOVE_ROOT)/src/riscvmove.sv rtl/uart_echo.sv rtl/bno085_rvc_parser_cpu.sv rtl/rvc_uart_forwarder.sv rtl/top_riscv_bno_3axis_cpu.sv
+GIMBAL_JSON := $(BUILD_GIMBAL)/bno085_3axis_cpu.json
+GIMBAL_ASC := $(BUILD_GIMBAL)/bno085_3axis_cpu.asc
+GIMBAL_BIN := $(BUILD_GIMBAL)/bno085_3axis_cpu.bin
+GIMBAL_ELF := $(BUILD_GIMBAL)/bno085_3axis_cpu.elf
+GIMBAL_PROG := $(BUILD_GIMBAL)/cpu_3axis_program.hex
+GIMBAL_DATA := $(BUILD_GIMBAL)/cpu_3axis_data.hex
+
+.PHONY: gimbal-help gimbal-firmware gimbal-lint gimbal-synth gimbal-bitstream gimbal-cram gimbal-flash gimbal-clean
+gimbal-help:
+	@echo "Set RISCVMOVE_ROOT to the course riscvmove directory."
+	@echo "gimbal-cram is temporary SRAM configuration; gimbal-flash is persistent only with correct board jumpers."
+gimbal-firmware: $(GIMBAL_PROG) $(GIMBAL_DATA)
+$(GIMBAL_PROG): firmware/bno085_3axis_cpu.c $(RISCVMOVE_ROOT)/link.ld $(RISCVMOVE_ROOT)/crt0.s $(RISCVMOVE_ROOT)/bin2hex.py
+	mkdir -p $(BUILD_GIMBAL)
+	riscv64-unknown-elf-gcc -Og -march=rv32i -mabi=ilp32 -nostdlib -T $(RISCVMOVE_ROOT)/link.ld $(RISCVMOVE_ROOT)/crt0.s firmware/bno085_3axis_cpu.c -o $(GIMBAL_ELF)
+	riscv64-unknown-elf-objcopy -O binary -j .text $(GIMBAL_ELF) $(BUILD_GIMBAL)/cpu_3axis_program.bin
+	python3 $(RISCVMOVE_ROOT)/bin2hex.py $(BUILD_GIMBAL)/cpu_3axis_program.bin $(GIMBAL_PROG) 512 unique
+$(GIMBAL_DATA): $(GIMBAL_PROG)
+	riscv64-unknown-elf-objcopy -O binary -j .rodata -j .data $(GIMBAL_ELF) $(BUILD_GIMBAL)/cpu_3axis_data.bin
+	python3 $(RISCVMOVE_ROOT)/bin2hex.py $(BUILD_GIMBAL)/cpu_3axis_data.bin $(GIMBAL_DATA) 256
+gimbal-lint: gimbal-firmware
+	verilator --lint-only -Wall --top-module $(TOP_GIMBAL) $(GIMBAL_RTL)
+$(GIMBAL_JSON): $(GIMBAL_RTL) $(PCF_GIMBAL) $(GIMBAL_PROG) $(GIMBAL_DATA)
+	yosys -q -p 'read_verilog -sv -I $(RISCVMOVE_ROOT)/src $(GIMBAL_RTL); synth_ice40 -top $(TOP_GIMBAL); delete t:$$scopeinfo; write_json $(GIMBAL_JSON)'
+gimbal-synth: $(GIMBAL_JSON)
+$(GIMBAL_ASC): $(GIMBAL_JSON) $(PCF_GIMBAL)
+	nextpnr-ice40 --hx8k --package ct256 --pcf $(PCF_GIMBAL) --json $(GIMBAL_JSON) --asc $(GIMBAL_ASC)
+$(GIMBAL_BIN): $(GIMBAL_ASC)
+	icepack $(GIMBAL_ASC) $(GIMBAL_BIN)
+gimbal-bitstream: $(GIMBAL_BIN)
+gimbal-cram: $(GIMBAL_BIN)
+	iceprog -S $(GIMBAL_BIN)
+gimbal-flash: $(GIMBAL_BIN)
+	iceprog $(GIMBAL_BIN)
+gimbal-clean:
+	rm -rf $(BUILD_GIMBAL)
