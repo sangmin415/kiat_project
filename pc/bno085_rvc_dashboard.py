@@ -122,6 +122,8 @@ def main():
     next_command = 0
     last_rx = 0
     zero = {"roll": 0.0, "pitch": 0.0, "yaw": 0.0}
+    last_zero_source = "startup"
+    last_zero_time = 0.0
     last_ticks = (18000, 18000, 18000)
     hist = {x: deque(maxlen=150) for x in ("roll", "pitch", "yaw", "vib")}
     running = True
@@ -132,6 +134,8 @@ def main():
                 running = False
             if e.type == pygame.KEYDOWN and e.key == pygame.K_z:
                 zero = {key: sample[key] for key in ("roll", "pitch", "yaw")}
+                last_zero_source = "PC Z"
+                last_zero_time = time.monotonic()
 
         now = time.monotonic()
         fresh = []
@@ -144,6 +148,8 @@ def main():
 
         if rvc.zero_events:
             zero = {key: sample[key] for key in ("roll", "pitch", "yaw")}
+            last_zero_source = "FPGA keypad B"
+            last_zero_time = now
             rvc.zero_events = 0
 
         if fresh:
@@ -164,6 +170,7 @@ def main():
             send_servo_command(uart, last_ticks)
             next_command = now + .02
 
+        relative = {key: sample[key] - zero[key] for key in ("roll", "pitch", "yaw")}
         screen.fill(BG)
         screen.blit(title.render("PURDUE KIAT | BNO085 FPGA GIMBAL MONITOR", True, GOLD), (28, 18))
         live = a.simulate or now-last_rx < .5
@@ -171,12 +178,13 @@ def main():
                                  CYAN if a.simulate else ORANGE), (30, 57))
         screen.blit(label.render(f"PC PWM ticks: R0 {last_ticks[0]} R1 {last_ticks[1]} R2 {last_ticks[2]} | B/Z: set zero", True, GREEN), (480, 57))
         for i, (n, k, c) in enumerate((("ROLL / R0", "roll", CYAN), ("PITCH / R1", "pitch", ORANGE), ("YAW / R2", "yaw", GOLD))):
-            card(screen, label, value, pygame.Rect(28+i*220, 94, 205, 92), n, sample[k], c)
+            card(screen, label, value, pygame.Rect(28+i*220, 94, 205, 92), n, relative[k], c)
         status = pygame.Rect(700, 94, 552, 92)
         pygame.draw.rect(screen, PANEL, status, border_radius=12)
         screen.blit(label.render("RVC VALID" if live else "WAITING FOR RVC DATA", True, GREEN if live else RED), (status.x+14, status.y+12))
-        screen.blit(label.render(f"SEQ {sample['seq']:03d} checksum errors {rvc.bad_checksum} ACC {sample['ax']}, {sample['ay']}, {sample['az']} mg", True, TEXT), (status.x+14, status.y+54))
-        stage(screen, label, pygame.font.SysFont("consolas", 14, True), pygame.Rect(28, 205, 790, 525), sample)
+        zero_age = "-" if last_zero_time == 0 else f"{now-last_zero_time:.1f}s ago"
+        screen.blit(label.render(f"ZERO: {last_zero_source} ({zero_age}) | SEQ {sample['seq']:03d} | checksum {rvc.bad_checksum}", True, TEXT), (status.x+14, status.y+54))
+        stage(screen, label, pygame.font.SysFont("consolas", 14, True), pygame.Rect(28, 205, 790, 525), relative)
         trace(screen, label, pygame.Rect(842, 205, 410, 115), hist["roll"], CYAN, "ROLL - degrees", 35)
         trace(screen, label, pygame.Rect(842, 338, 410, 115), hist["pitch"], ORANGE, "PITCH - degrees", 35)
         trace(screen, label, pygame.Rect(842, 471, 410, 115), hist["yaw"], GOLD, "YAW - degrees", 60)
