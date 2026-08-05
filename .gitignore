@@ -3,3 +3,6 @@ logs/
 vvp_sim.log
 __pycache__/
 *.pyc
+
+# Generated outputs for the RV32I/BNO085 gimbal build
+build/gimbal/
