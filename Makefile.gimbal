@@ -22,6 +22,8 @@ gimbal-test:
 	mkdir -p $(BUILD_GIMBAL)
 	iverilog -g2012 -o $(BUILD_GIMBAL)/rvc_parser_tb rtl/bno085_rvc_parser_cpu.sv tb/bno085_rvc_parser_cpu_tb.sv
 	vvp $(BUILD_GIMBAL)/rvc_parser_tb
+	iverilog -g2012 -o $(BUILD_GIMBAL)/rvc_forwarder_tb rtl/uart_core.sv rtl/rvc_uart_forwarder.sv tb/rvc_uart_forwarder_tb.sv
+	vvp $(BUILD_GIMBAL)/rvc_forwarder_tb
 
 gimbal-firmware: $(GIMBAL_PROG) $(GIMBAL_DATA)
 $(GIMBAL_PROG): firmware/bno085_3axis_cpu.c $(RISCVMOVE_ROOT)/link.ld $(RISCVMOVE_ROOT)/crt0.s $(RISCVMOVE_ROOT)/bin2hex.py
