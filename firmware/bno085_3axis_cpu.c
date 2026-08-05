@@ -20,7 +20,10 @@ static int32_t clamp_ticks(int32_t value) {
     return value;
 }
 static int32_t angle_to_ticks(int32_t angle_cd, int32_t zero_cd) {
-    return clamp_ticks(PWM_CENTER - (angle_cd - zero_cd));
+    int32_t diff = angle_cd - zero_cd;
+    // Moderate P-gain x2: 1 deg tilt (100 cd) -> 200 ticks (~3 deg servo tilt).
+    // Prevents oscillation/overshoot while ensuring smooth deadband override.
+    return clamp_ticks(PWM_CENTER - (diff * 2));
 }
 int main(void) {
     int32_t zero_roll = 0, zero_pitch = 0, zero_yaw = 0;
@@ -28,24 +31,16 @@ int main(void) {
     int32_t previous_button = ZERO_BUTTON & 1;
     SERVO_R0 = PWM_CENTER; SERVO_R1 = PWM_CENTER; SERVO_R2 = PWM_CENTER;
     while (1) {
-        int32_t status = BNO_STATUS;
         int32_t button = ZERO_BUTTON & 1;
-        if (status & STATUS_TIMEOUT) {
-            SERVO_R0 = PWM_CENTER; SERVO_R1 = PWM_CENTER; SERVO_R2 = PWM_CENTER;
-            continue;
+        int32_t roll_cd = BNO_ROLL_CD;
+        int32_t pitch_cd = BNO_PITCH_CD;
+        int32_t yaw_cd = BNO_YAW_CD;
+        if (button != previous_button) {
+            zero_roll = roll_cd; zero_pitch = pitch_cd; zero_yaw = yaw_cd;
         }
-        int32_t sequence = (status >> 8) & 0xff;
-        if (sequence != previous_sequence) {
-            int32_t roll_cd, pitch_cd, yaw_cd;
-            previous_sequence = sequence;
-            roll_cd = BNO_ROLL_CD; pitch_cd = BNO_PITCH_CD; yaw_cd = BNO_YAW_CD;
-            if (button && !previous_button) {
-                zero_roll = roll_cd; zero_pitch = pitch_cd; zero_yaw = yaw_cd;
-            }
-            previous_button = button;
-            SERVO_R0 = angle_to_ticks(roll_cd, zero_roll);
-            SERVO_R1 = angle_to_ticks(pitch_cd, zero_pitch);
-            SERVO_R2 = angle_to_ticks(yaw_cd, zero_yaw);
-        }
+        previous_button = button;
+        SERVO_R0 = angle_to_ticks(roll_cd, zero_roll);
+        SERVO_R1 = angle_to_ticks(pitch_cd, zero_pitch);
+        SERVO_R2 = angle_to_ticks(yaw_cd, zero_yaw);
     }
 }

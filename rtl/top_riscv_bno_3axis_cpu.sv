@@ -117,9 +117,9 @@ module top_riscv_bno_3axis_cpu (
     end
 
     logic [17:0] pwm_count;
-    wire [17:0] safe_r0 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r0_reg;
-    wire [17:0] safe_r1 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r1_reg;
-    wire [17:0] safe_r2 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r2_reg;
+    wire [17:0] safe_r0 = pwm_r0_reg;
+    wire [17:0] safe_r1 = pwm_r1_reg;
+    wire [17:0] safe_r2 = pwm_r2_reg;
     always_ff @(posedge hwclk) begin
         if (reset || pwm_count == FRAME_TICKS - 1) pwm_count <= 0;
         else pwm_count <= pwm_count + 1'b1;
