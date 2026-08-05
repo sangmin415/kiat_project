@@ -46,7 +46,7 @@ module top_riscv_bno_3axis_cpu (
     logic [7:0] sample_seq;
     logic sample_valid, checksum_error, sensor_timeout, forward_overflow;
     uart_rx #(.CLK_HZ(12_000_000), .BAUD(115_200)) bno_receiver (
-        .clk(hwclk), .reset(reset), .Rx(bno_rxc), .data(rx_data), .valid(rx_valid)
+        .clk(hwclk), .reset(reset), .Rx(~bno_rxc), .data(rx_data), .valid(rx_valid)
     );
     bno085_rvc_parser_cpu parser (
         .clk(hwclk), .reset(reset), .byte_data(rx_data), .byte_valid(rx_valid),
