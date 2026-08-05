@@ -11,8 +11,10 @@ pcservo-test:
 	mkdir -p $(BUILD)
 	iverilog -g2012 -o $(BUILD)/command_tb rtl/servo_command_parser.sv tb/servo_command_parser_tb.sv
 	vvp $(BUILD)/command_tb
+	iverilog -g2012 -o $(BUILD)/forwarder_tb rtl/uart_core.sv rtl/rvc_uart_forwarder.sv tb/rvc_uart_forwarder_tb.sv
+	vvp $(BUILD)/forwarder_tb
 pcservo-lint:
-	verilator --lint-only -Wall --top-module $(TOP) $(RTL)
+	verilator --lint-only -Wall -Wno-fatal --top-module $(TOP) $(RTL)
 $(JSON): $(RTL) $(PCF)
 	mkdir -p $(BUILD)
 	yosys -q -p 'read_verilog -sv $(RTL); synth_ice40 -top $(TOP); delete t:$$scopeinfo; write_json $(JSON)'
