@@ -7,8 +7,10 @@ module rvc_uart_forwarder #(
     logic [7:0] fifo [0:7], tx_data;
     logic [2:0] write_ptr, read_ptr; logic [3:0] count;
     logic tx_start, tx_busy, event_pending; logic [1:0] event_index;
-    wire event_launch = !tx_busy && event_pending && count==0;
-    wire pop = !tx_busy && !event_launch && count!=0;
+    wire event_launch = !tx_busy && !tx_start && event_pending && count==0;
+    // tx_start is a one-clock request.  Do not pop another FIFO byte until
+    // uart_tx has accepted that request and asserted busy.
+    wire pop = !tx_busy && !tx_start && !event_launch && count!=0;
     wire push = rx_valid && count!=8;
     function automatic [7:0] event_byte(input [1:0] index);
         case(index)
