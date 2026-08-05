@@ -1,4 +1,3 @@
-
 # Purdue ECE270 iCE40HX8K (CT256) board pin map used in the BNO085 gimbal MVP.
 set_io hwclk       J3
 set_io bno_rxc     C3
