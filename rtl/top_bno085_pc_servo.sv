@@ -6,9 +6,19 @@ module top_bno085_pc_servo (
     localparam integer PWM_MIN=13200, PWM_CENTER=18000, PWM_MAX=22800;
     logic [7:0] startup=8'hff; wire reset=|startup;
     always_ff @(posedge hwclk) if(startup!=0) startup<=startup-1'b1;
+
+    // The board keypad polarity is not assumed. A debounced physical press
+    // generates a transition in either direction, which the PC treats as
+    // one harmless zero-calibration request.
     logic b_meta,b_sync,b_prev;
-    wire b_zero_event=b_sync&&!b_prev;
-    always_ff @(posedge hwclk) begin b_meta<=zero_button_b; b_sync<=b_meta; b_prev<=b_sync; end
+    wire b_zero_event=b_sync!=b_prev;
+    always_ff @(posedge hwclk) begin
+        if(reset) begin
+            b_meta<=0; b_sync<=0; b_prev<=0;
+        end else begin
+            b_meta<=zero_button_b; b_sync<=b_meta; b_prev<=b_sync;
+        end
+    end
 
     logic [7:0] bno_byte,pc_byte; logic bno_valid,pc_valid;
     logic signed [15:0] yaw_cd,pitch_cd,roll_cd,ax,ay,az;
