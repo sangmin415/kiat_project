@@ -1,4 +1,3 @@
-
 module top_riscv_bno_3axis_cpu (
     input logic hwclk, input logic bno_rxc, input logic zero_button,
     output logic Tx, output wire servo_r0, servo_r1, servo_r2, output wire red, green
@@ -46,7 +45,7 @@ module top_riscv_bno_3axis_cpu (
     logic [7:0] sample_seq;
     logic sample_valid, checksum_error, sensor_timeout, forward_overflow;
     uart_rx #(.CLK_HZ(12_000_000), .BAUD(115_200)) bno_receiver (
-        .clk(hwclk), .reset(reset), .Rx(~bno_rxc), .data(rx_data), .valid(rx_valid)
+        .clk(hwclk), .reset(reset), .Rx(bno_rxc), .data(rx_data), .valid(rx_valid)
     );
     bno085_rvc_parser_cpu parser (
         .clk(hwclk), .reset(reset), .byte_data(rx_data), .byte_valid(rx_valid),
@@ -117,9 +116,9 @@ module top_riscv_bno_3axis_cpu (
     end
 
     logic [17:0] pwm_count;
-    wire [17:0] safe_r0 = pwm_r0_reg;
-    wire [17:0] safe_r1 = pwm_r1_reg;
-    wire [17:0] safe_r2 = pwm_r2_reg;
+    wire [17:0] safe_r0 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r0_reg;
+    wire [17:0] safe_r1 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r1_reg;
+    wire [17:0] safe_r2 = (sensor_timeout || !cpu_seen_pwm_write) ? PWM_CENTER_TICKS : pwm_r2_reg;
     always_ff @(posedge hwclk) begin
         if (reset || pwm_count == FRAME_TICKS - 1) pwm_count <= 0;
         else pwm_count <= pwm_count + 1'b1;
