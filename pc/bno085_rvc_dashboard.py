@@ -16,9 +16,12 @@ class RvcParser:
     def __init__(self):
         self.buf = bytearray()
         self.bad_checksum = 0
+        self.zero_events = 0
     def feed(self, data):
         self.buf.extend(data); out = []
         while True:
+            if self.buf.startswith(b"\x55\x5a\x42\xf1"):
+                del self.buf[:4]; self.zero_events += 1; continue
             start = self.buf.find(b"\xaa\xaa")
             if start < 0:
                 self.buf[:] = b"\xaa" if self.buf.endswith(b"\xaa") else b""
@@ -60,7 +63,7 @@ def stage(screen, font, small, rect, s):
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, GOLD, rect, 2, border_radius=12)
     screen.blit(font.render("3-AXIS GIMBAL / WAFER STAGE", True, TEXT), (rect.x+16,rect.y+14))
-    screen.blit(small.render("R0=Roll   R1=Pitch   R2=Yaw   |   PC keyboard Z: zero calibration", True, GOLD), (rect.x+16,rect.y+45))
+    screen.blit(small.render("R0=Roll   R1=Pitch   R2=Yaw   |   FPGA keypad B or PC key Z: zero calibration", True, GOLD), (rect.x+16,rect.y+45))
     cx, cy = rect.centerx, rect.centery+25
     pygame.draw.arc(screen, GOLD, (cx-150,cy-105,300,210), math.radians(180-clamp(s["yaw"],-45,45)), math.radians(360-clamp(s["yaw"],-45,45)), 7)
     pygame.draw.rect(screen, ORANGE, (cx-120+int(s["pitch"]),cy-72,240,145), 6, border_radius=12)
@@ -91,6 +94,9 @@ def main():
         if a.simulate and now>=next_sim:
             seq+=1; fresh=[sim(now,seq)]; next_sim=now+.01
         elif not a.simulate: fresh=rvc.feed(uart.read(uart.in_waiting or 1))
+        if rvc.zero_events:
+            zero = {key: sample[key] for key in ("roll","pitch","yaw")}
+            rvc.zero_events = 0
         if fresh:
             sample=fresh[-1]; last_rx=now
             last_ticks = (servo_ticks(sample["roll"], zero["roll"]), servo_ticks(sample["pitch"], zero["pitch"]), servo_ticks(sample["yaw"], zero["yaw"]))
@@ -101,7 +107,7 @@ def main():
         screen.fill(BG); screen.blit(title.render("PURDUE KIAT | BNO085 FPGA GIMBAL MONITOR",True,GOLD),(28,18))
         live=a.simulate or now-last_rx<.5
         screen.blit(label.render("SIMULATION" if a.simulate else ("PC CONTROL: "+a.port),True,CYAN if a.simulate else ORANGE),(30,57))
-        screen.blit(label.render(f"PC PWM ticks: R0 {last_ticks[0]}  R1 {last_ticks[1]}  R2 {last_ticks[2]}  |  Z: set zero",True,GREEN),(480,57))
+        screen.blit(label.render(f"PC PWM ticks: R0 {last_ticks[0]}  R1 {last_ticks[1]}  R2 {last_ticks[2]}  |  B/Z: set zero",True,GREEN),(480,57))
         for i,(n,k,c) in enumerate((("ROLL / R0","roll",CYAN),("PITCH / R1","pitch",ORANGE),("YAW / R2","yaw",GOLD))):
             card(screen,label,value,pygame.Rect(28+i*220,94,205,92),n,sample[k],c)
         status=pygame.Rect(700,94,552,92); pygame.draw.rect(screen,PANEL,status,border_radius=12)
