@@ -1,9 +1,11 @@
+
 module top_riscv_bno_3axis_cpu (
     input logic hwclk, input logic bno_rxc, input logic zero_button,
-    output logic Tx, output wire servo_r0, servo_r1, servo_r2, output wire green
+    output logic Tx, output wire servo_r0, servo_r1, servo_r2, output wire red, green
 );
     localparam integer FRAME_TICKS = 240000;
     localparam integer PWM_MIN_TICKS = 13200, PWM_CENTER_TICKS = 18000, PWM_MAX_TICKS = 22800;
+    localparam integer BUTTON_DEBOUNCE_TICKS = 60000; // 5 ms at 12 MHz
     logic [1:0] phase = 0;
     wire memclk = hwclk, cpu_clk = ~phase[1];
     always_ff @(posedge memclk) phase <= phase + 1'b1;
@@ -11,6 +13,32 @@ module top_riscv_bno_3axis_cpu (
     logic [7:0] startup = 8'hff;
     wire reset = |startup;
     always_ff @(posedge hwclk) if (startup != 0) startup <= startup - 1'b1;
+
+
+    // C6 (pb[10]) is asynchronous and active-low. Present a debounced,
+    // active-high pressed level to the RV32I firmware.
+    logic zero_button_meta, zero_button_sync, zero_button_n;
+    logic [15:0] zero_button_count;
+    always_ff @(posedge hwclk) begin
+        if (reset) begin
+            zero_button_meta <= 1'b1;
+            zero_button_sync <= 1'b1;
+            zero_button_n <= 1'b1;
+            zero_button_count <= 0;
+        end else begin
+            zero_button_meta <= zero_button;
+            zero_button_sync <= zero_button_meta;
+            if (zero_button_sync == zero_button_n) begin
+                zero_button_count <= 0;
+            end else if (zero_button_count == BUTTON_DEBOUNCE_TICKS - 1) begin
+                zero_button_n <= zero_button_sync;
+                zero_button_count <= 0;
+            end else begin
+                zero_button_count <= zero_button_count + 1'b1;
+            end
+        end
+    end
+    wire zero_button_pressed = ~zero_button_n;
 
     logic [7:0] rx_data;
     logic rx_valid;
@@ -57,7 +85,7 @@ module top_riscv_bno_3axis_cpu (
             32'h8000_0060: mmio_din = {{16{roll_cd[15]}}, roll_cd};
             32'h8000_0064: mmio_din = {16'b0, sample_seq, 4'b0, forward_overflow, checksum_error, sample_valid, sensor_timeout};
             32'h8000_0068: mmio_din = {{14{1'b0}}, pwm_r0_reg};
-            32'h8000_006c: mmio_din = {31'b0, zero_button};
+            32'h8000_006c: mmio_din = {31'b0, zero_button_pressed};
             32'h8000_0070: mmio_din = {{16{pitch_cd[15]}}, pitch_cd};
             32'h8000_0074: mmio_din = {{16{yaw_cd[15]}}, yaw_cd};
             32'h8000_0078: mmio_din = {{14{1'b0}}, pwm_r1_reg};
@@ -99,5 +127,8 @@ module top_riscv_bno_3axis_cpu (
     assign servo_r0 = (pwm_count < safe_r0);
     assign servo_r1 = (pwm_count < safe_r1);
     assign servo_r2 = (pwm_count < safe_r2);
-    assign green = cpu_seen_pwm_write;
+    // Red means parser timeout forces neutral PWM. Green means the CPU is
+    // actively controlling with live sensor data.
+    assign red = sensor_timeout;
+    assign green = cpu_seen_pwm_write && !sensor_timeout;
 endmodule
