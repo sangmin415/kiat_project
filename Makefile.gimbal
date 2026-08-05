@@ -1,3 +1,4 @@
+
 # BNO085 UART-RVC + RV32I 3-axis gimbal build (Purdue ECE270 iCE40HX8K).
 # Usage in WSL:
 #   make -f Makefile.gimbal gimbal-bitstream RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
@@ -33,7 +34,7 @@ $(GIMBAL_DATA): $(GIMBAL_PROG)
 	riscv64-unknown-elf-objcopy -O binary -j .rodata -j .data $(GIMBAL_ELF) $(BUILD_GIMBAL)/cpu_3axis_data.bin
 	python3 $(RISCVMOVE_ROOT)/bin2hex.py $(BUILD_GIMBAL)/cpu_3axis_data.bin $(GIMBAL_DATA) 256
 gimbal-lint: gimbal-firmware
-	verilator --lint-only -Wall --top-module $(TOP_GIMBAL) $(GIMBAL_RTL)
+	verilator --lint-only -Wall --Wno-fatal -I$(RISCVMOVE_ROOT)/src --top-module $(TOP_GIMBAL) $(GIMBAL_RTL)
 $(GIMBAL_JSON): $(GIMBAL_RTL) $(PCF_GIMBAL) $(GIMBAL_PROG) $(GIMBAL_DATA)
 	yosys -q -p 'read_verilog -sv -I $(RISCVMOVE_ROOT)/src $(GIMBAL_RTL); synth_ice40 -top $(TOP_GIMBAL); delete t:$$scopeinfo; write_json $(GIMBAL_JSON)'
 gimbal-synth: $(GIMBAL_JSON)
