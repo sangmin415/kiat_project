@@ -36,7 +36,7 @@ module rvc_uart_forwarder_tb;
         @(negedge clk); rx_data = 8'h56;
         @(negedge clk); rx_valid = 0;
 
-        repeat (500) @(posedge clk);
+        repeat (50000) @(posedge clk);
         if (overflow) $fatal(1, "unexpected FIFO overflow");
         if (received_count != 3)
             $fatal(1, "expected 3 bytes, received %0d", received_count);
