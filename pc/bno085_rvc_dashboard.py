@@ -21,7 +21,8 @@ class RvcParser:
         while True:
             start = self.buf.find(b"\xaa\xaa")
             if start < 0:
-                self.buf[:] = self.buf[-1:]; return out
+                self.buf[:] = b"\xaa" if self.buf.endswith(b"\xaa") else b""
+                return out
             if start: del self.buf[:start]
             if len(self.buf) < 19: return out
             frame = bytes(self.buf[:19]); del self.buf[:19]
