@@ -1,0 +1,29 @@
+# PC-calculated BNO085 three-servo build.
+BUILD := build/pcservo
+TOP := top_bno085_pc_servo
+PCF := constraints/bno085_pc_servo.pcf
+RTL := rtl/uart_core.sv rtl/bno085_rvc_parser_cpu.sv rtl/rvc_uart_forwarder.sv rtl/servo_command_parser.sv rtl/top_bno085_pc_servo.sv
+JSON := $(BUILD)/pcservo.json
+ASC := $(BUILD)/pcservo.asc
+BIN := $(BUILD)/pcservo.bin
+.PHONY: pcservo-test pcservo-lint pcservo-bitstream pcservo-cram pcservo-flash pcservo-clean
+pcservo-test:
+	mkdir -p $(BUILD)
+	iverilog -g2012 -o $(BUILD)/command_tb rtl/servo_command_parser.sv tb/servo_command_parser_tb.sv
+	vvp $(BUILD)/command_tb
+pcservo-lint:
+	verilator --lint-only -Wall --top-module $(TOP) $(RTL)
+$(JSON): $(RTL) $(PCF)
+	mkdir -p $(BUILD)
+	yosys -q -p 'read_verilog -sv $(RTL); synth_ice40 -top $(TOP); delete t:$$scopeinfo; write_json $(JSON)'
+$(ASC): $(JSON) $(PCF)
+	nextpnr-ice40 --hx8k --package ct256 --pcf $(PCF) --json $(JSON) --asc $(ASC)
+$(BIN): $(ASC)
+	icepack $(ASC) $(BIN)
+pcservo-bitstream: $(BIN)
+pcservo-cram: $(BIN)
+	iceprog -S $(BIN)
+pcservo-flash: $(BIN)
+	iceprog $(BIN)
+pcservo-clean:
+	rm -rf $(BUILD)
