@@ -9,7 +9,7 @@ module servo_command_parser_tb;
  task send(input [7:0] b); begin @(negedge clk);data=b;valid=1;@(negedge clk);valid=0;end endtask
  initial begin
   #25;reset=0;
-  send(8'h55);send(8'ha5);send(8'h46);send(8'h50);send(8'h4b);send(8'h00);send(8'h57);send(8'h30);send(8'h6f);
+  send(8'h55);send(8'ha5);send(8'h46);send(8'h50);send(8'h4b);send(8'h00);send(8'h57);send(8'h30);send(8'h68);
   @(posedge clk);#1;
   if(!saw||r0!=16'd18000||r1!=16'd19200||r2!=16'd22320||timeout) $fatal(1,"PC servo packet parser failed");
   $display("PASS: servo_command_parser_tb");$finish;
