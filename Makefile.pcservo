@@ -2,7 +2,7 @@
 BUILD := build/pcservo
 TOP := top_bno085_pc_servo
 PCF := constraints/bno085_pc_servo.pcf
-RTL := rtl/uart_core.sv rtl/bno085_rvc_parser_cpu.sv rtl/rvc_uart_forwarder.sv rtl/servo_command_parser.sv rtl/top_bno085_pc_servo.sv
+RTL := rtl/uart_core.sv rtl/bno085_rvc_parser.sv rtl/rvc_uart_forwarder.sv rtl/servo_command_parser.sv rtl/top_bno085_pc_servo.sv
 JSON := $(BUILD)/pcservo.json
 ASC := $(BUILD)/pcservo.asc
 BIN := $(BUILD)/pcservo.bin
