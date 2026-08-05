@@ -22,6 +22,7 @@ module bno085_rvc_parser_cpu_tb;
         send(8'hff); send(8'he8); send(8'h03); send(8'h00); send(8'h00); send(8'h00);
         send(8'hcf); // sum of bytes index 2 through 17
         @(posedge clk); #1;
+        $display("valid=%0d seq=%h yaw=%0d pitch=%0d roll=%0d ax=%0d ay=%0d az=%0d timeout=%0d", valid, seq, yaw_cd, pitch_cd, roll_cd, ax, ay, az, sensor_timeout);
         if (!valid || seq!=8'h07 || yaw_cd!=16'sh1234 || pitch_cd!=-2 || roll_cd!=-100 ||
             ax!=10 || ay!=-10 || az!=1000 || sensor_timeout)
             $fatal(1, "RVC parser did not decode expected values");
