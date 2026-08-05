@@ -1,4 +1,4 @@
-"""BNO085 UART-RVC live monitor for the iCE40/RV32I three-axis gimbal."""
+"""PC-calculated BNO085 three-axis servo controller over a full-duplex FPGA UART."""
 from __future__ import annotations
 import argparse, math, time
 from collections import deque
@@ -36,6 +36,12 @@ def sim(t, seq):
                 yaw=35*math.sin(t*.2), ax=int(70*math.sin(t*5)), ay=int(60*math.sin(t*4)),
                 az=1000+int(45*math.sin(t*6)))
 def clamp(x, lo, hi): return max(lo, min(hi, x))
+def servo_ticks(angle, zero):
+    # 1 centidegree -> 1 FPGA PWM tick; matches 1.1 to 1.9 ms safety range.
+    return int(clamp(18000 - int(round((angle-zero)*100)), 13200, 22800))
+def send_servo_command(uart, ticks):
+    payload = b"".join(int(v).to_bytes(2, "big") for v in ticks)
+    uart.write(b"\\x55\\xa5" + payload + bytes([sum(payload) & 0xff]))
 def card(screen, f1, f2, rect, name, val, color):
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, color, rect, 2, border_radius=12)
@@ -54,7 +60,7 @@ def stage(screen, font, small, rect, s):
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, GOLD, rect, 2, border_radius=12)
     screen.blit(font.render("3-AXIS GIMBAL / WAFER STAGE", True, TEXT), (rect.x+16,rect.y+14))
-    screen.blit(small.render("R0=Roll   R1=Pitch   R2=Yaw   |   FPGA keypad A: servo zero", True, GOLD), (rect.x+16,rect.y+45))
+    screen.blit(small.render("R0=Roll   R1=Pitch   R2=Yaw   |   PC keyboard Z: zero calibration", True, GOLD), (rect.x+16,rect.y+45))
     cx, cy = rect.centerx, rect.centery+25
     pygame.draw.arc(screen, GOLD, (cx-150,cy-105,300,210), math.radians(180-clamp(s["yaw"],-45,45)), math.radians(360-clamp(s["yaw"],-45,45)), 7)
     pygame.draw.rect(screen, ORANGE, (cx-120+int(s["pitch"]),cy-72,240,145), 6, border_radius=12)
@@ -71,11 +77,15 @@ def main():
     pygame.init(); screen=pygame.display.set_mode((W,H)); pygame.display.set_caption("PURDUE KIAT | BNO085 FPGA GIMBAL MONITOR")
     title=pygame.font.SysFont("consolas",27,True); label=pygame.font.SysFont("consolas",18,True); value=pygame.font.SysFont("consolas",30,True)
     clock=pygame.time.Clock(); rvc=RvcParser(); sample=sim(0,0); seq=0; next_sim=0; last_rx=0
+    zero = {"roll": 0.0, "pitch": 0.0, "yaw": 0.0}
+    last_ticks = (18000, 18000, 18000)
     hist={x:deque(maxlen=150) for x in ("roll","pitch","yaw","vib")}
     running=True
     while running:
         for e in pygame.event.get():
             if e.type==pygame.QUIT or (e.type==pygame.KEYDOWN and e.key==pygame.K_ESCAPE): running=False
+            if e.type==pygame.KEYDOWN and e.key==pygame.K_z:
+                zero = {key: sample[key] for key in ("roll","pitch","yaw")}
         now=time.monotonic()
         fresh=[]
         if a.simulate and now>=next_sim:
@@ -83,12 +93,15 @@ def main():
         elif not a.simulate: fresh=rvc.feed(uart.read(uart.in_waiting or 1))
         if fresh:
             sample=fresh[-1]; last_rx=now
+            last_ticks = (servo_ticks(sample["roll"], zero["roll"]), servo_ticks(sample["pitch"], zero["pitch"]), servo_ticks(sample["yaw"], zero["yaw"]))
+            if uart: send_servo_command(uart, last_ticks)
             for p in fresh:
                 hist["roll"].append(p["roll"]); hist["pitch"].append(p["pitch"]); hist["yaw"].append(p["yaw"])
                 hist["vib"].append(math.sqrt(p["ax"]**2+p["ay"]**2+(p["az"]-1000)**2))
         screen.fill(BG); screen.blit(title.render("PURDUE KIAT | BNO085 FPGA GIMBAL MONITOR",True,GOLD),(28,18))
         live=a.simulate or now-last_rx<.5
-        screen.blit(label.render("SIMULATION" if a.simulate else ("HARDWARE: "+a.port),True,CYAN if a.simulate else ORANGE),(30,57))
+        screen.blit(label.render("SIMULATION" if a.simulate else ("PC CONTROL: "+a.port),True,CYAN if a.simulate else ORANGE),(30,57))
+        screen.blit(label.render(f"PC PWM ticks: R0 {last_ticks[0]}  R1 {last_ticks[1]}  R2 {last_ticks[2]}  |  Z: set zero",True,GREEN),(480,57))
         for i,(n,k,c) in enumerate((("ROLL / R0","roll",CYAN),("PITCH / R1","pitch",ORANGE),("YAW / R2","yaw",GOLD))):
             card(screen,label,value,pygame.Rect(28+i*220,94,205,92),n,sample[k],c)
         status=pygame.Rect(700,94,552,92); pygame.draw.rect(screen,PANEL,status,border_radius=12)
