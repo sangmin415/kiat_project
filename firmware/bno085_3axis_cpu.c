@@ -39,7 +39,7 @@ int main(void) {
             int32_t roll_cd, pitch_cd, yaw_cd;
             previous_sequence = sequence;
             roll_cd = BNO_ROLL_CD; pitch_cd = BNO_PITCH_CD; yaw_cd = BNO_YAW_CD;
-            if (button != previous_button) {
+            if (button && !previous_button) {
                 zero_roll = roll_cd; zero_pitch = pitch_cd; zero_yaw = yaw_cd;
             }
             previous_button = button;
