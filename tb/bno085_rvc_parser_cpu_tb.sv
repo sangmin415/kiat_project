@@ -20,7 +20,7 @@ module bno085_rvc_parser_cpu_tb;
         send(8'h07); send(8'h34); send(8'h12); send(8'hfe); send(8'hff);
         send(8'h9c); send(8'hff); send(8'h0a); send(8'h00); send(8'hf6);
         send(8'hff); send(8'he8); send(8'h03); send(8'h00); send(8'h00); send(8'h00);
-        send(8'h18); // sum of bytes index 2 through 17
+        send(8'hcf); // sum of bytes index 2 through 17
         @(posedge clk); #1;
         if (!valid || seq!=8'h07 || yaw_cd!=16'sh1234 || pitch_cd!=-2 || roll_cd!=-100 ||
             ax!=10 || ay!=-10 || az!=1000 || sensor_timeout)
