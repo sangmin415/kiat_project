@@ -6,7 +6,7 @@ RISCVMOVE_ROOT ?= /mnt/c/2132132/riscvmove
 BUILD_GIMBAL := build/gimbal
 TOP_GIMBAL := top_riscv_bno_3axis_cpu
 PCF_GIMBAL := constraints/bno085_3axis_cpu.pcf
-GIMBAL_RTL := $(RISCVMOVE_ROOT)/src/riscvmove.sv rtl/uart_echo.sv rtl/bno085_rvc_parser_cpu.sv rtl/rvc_uart_forwarder.sv rtl/top_riscv_bno_3axis_cpu.sv
+GIMBAL_RTL := $(RISCVMOVE_ROOT)/src/riscvmove.sv rtl/uart_core.sv rtl/bno085_rvc_parser_cpu.sv rtl/rvc_uart_forwarder.sv rtl/top_riscv_bno_3axis_cpu.sv
 GIMBAL_JSON := $(BUILD_GIMBAL)/bno085_3axis_cpu.json
 GIMBAL_ASC := $(BUILD_GIMBAL)/bno085_3axis_cpu.asc
 GIMBAL_BIN := $(BUILD_GIMBAL)/bno085_3axis_cpu.bin
@@ -14,10 +14,15 @@ GIMBAL_ELF := $(BUILD_GIMBAL)/bno085_3axis_cpu.elf
 GIMBAL_PROG := $(BUILD_GIMBAL)/cpu_3axis_program.hex
 GIMBAL_DATA := $(BUILD_GIMBAL)/cpu_3axis_data.hex
 
-.PHONY: gimbal-help gimbal-firmware gimbal-lint gimbal-synth gimbal-bitstream gimbal-cram gimbal-flash gimbal-clean
+.PHONY: gimbal-help gimbal-test gimbal-firmware gimbal-lint gimbal-synth gimbal-bitstream gimbal-cram gimbal-flash gimbal-clean
 gimbal-help:
 	@echo "Set RISCVMOVE_ROOT to the course riscvmove directory."
 	@echo "gimbal-cram is temporary SRAM configuration; gimbal-flash is persistent only with correct board jumpers."
+gimbal-test:
+	mkdir -p $(BUILD_GIMBAL)
+	iverilog -g2012 -o $(BUILD_GIMBAL)/rvc_parser_tb rtl/bno085_rvc_parser_cpu.sv tb/bno085_rvc_parser_cpu_tb.sv
+	vvp $(BUILD_GIMBAL)/rvc_parser_tb
+
 gimbal-firmware: $(GIMBAL_PROG) $(GIMBAL_DATA)
 $(GIMBAL_PROG): firmware/bno085_3axis_cpu.c $(RISCVMOVE_ROOT)/link.ld $(RISCVMOVE_ROOT)/crt0.s $(RISCVMOVE_ROOT)/bin2hex.py
 	mkdir -p $(BUILD_GIMBAL)
