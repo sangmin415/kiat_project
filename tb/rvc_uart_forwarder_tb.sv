@@ -2,7 +2,7 @@
 module rvc_uart_forwarder_tb;
     logic clk = 0, reset = 1;
     logic [7:0] rx_data = 0;
-    logic rx_valid = 0;
+    logic rx_valid = 0, zero_event = 0;
     logic tx, overflow;
     logic [7:0] decoded;
     logic decoded_valid;
@@ -12,7 +12,7 @@ module rvc_uart_forwarder_tb;
     always #5 clk = ~clk;
 
     rvc_uart_forwarder #(.CLK_HZ(1_000_000), .BAUD(100_000)) dut (
-        .clk(clk), .reset(reset), .rx_data(rx_data), .rx_valid(rx_valid),
+        .clk(clk), .reset(reset), .rx_data(rx_data), .rx_valid(rx_valid), .zero_event(zero_event),
         .Tx(tx), .overflow(overflow)
     );
 
