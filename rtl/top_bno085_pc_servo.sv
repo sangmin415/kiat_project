@@ -17,7 +17,7 @@ module top_bno085_pc_servo (
         .clk(hwclk),.reset(reset),.Rx(~bno_rxc),.data(bno_byte),.valid(bno_valid));
     uart_rx #(.CLK_HZ(12_000_000),.BAUD(115_200)) pc_rx(
         .clk(hwclk),.reset(reset),.Rx(pc_rxc),.data(pc_byte),.valid(pc_valid));
-    bno085_rvc_parser_cpu sensor(
+    bno085_rvc_parser sensor(
         .clk(hwclk),.reset(reset),.byte_data(bno_byte),.byte_valid(bno_valid),
         .yaw_cd(yaw_cd),.pitch_cd(pitch_cd),.roll_cd(roll_cd),.accel_x_mg(ax),.accel_y_mg(ay),.accel_z_mg(az),
         .sample_seq(sample_seq),.sample_valid(sample_valid),.checksum_error(checksum_error),.sensor_timeout(sensor_timeout));
