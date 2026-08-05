@@ -6,7 +6,7 @@ module rvc_uart_forwarder_tb;
     logic tx, overflow;
     logic [7:0] decoded;
     logic decoded_valid;
-    logic [7:0] received [0:2];
+    logic [7:0] received [0:6];
     integer received_count = 0;
 
     always #5 clk = ~clk;
@@ -21,7 +21,7 @@ module rvc_uart_forwarder_tb;
     );
 
     always_ff @(posedge clk) begin
-        if (decoded_valid && received_count < 3) begin
+        if (decoded_valid && received_count < 7) begin
             received[received_count] <= decoded;
             received_count <= received_count + 1;
         end
@@ -36,13 +36,15 @@ module rvc_uart_forwarder_tb;
         @(negedge clk); rx_data = 8'h56;
         @(negedge clk); rx_valid = 0;
 
-        repeat (50000) @(posedge clk);
+        @(negedge clk); zero_event = 1;
+        @(negedge clk); zero_event = 0;
+        repeat (100000) @(posedge clk);
         if (overflow) $fatal(1, "unexpected FIFO overflow");
-        if (received_count != 3)
+        if (received_count != 7)
             $fatal(1, "expected 3 bytes, received %0d", received_count);
-        if (received[0] !== 8'h12 || received[1] !== 8'h34 || received[2] !== 8'h56)
-            $fatal(1, "byte mismatch: %02x %02x %02x",
-                   received[0], received[1], received[2]);
+        if (received[0] !== 8'h12 || received[1] !== 8'h34 || received[2] !== 8'h56 ||
+            received[3] !== 8'h55 || received[4] !== 8'h5a || received[5] !== 8'h42 || received[6] !== 8'hf1)
+            $fatal(1, "forwarded data or B-key event bytes mismatch");
         $display("PASS: rvc_uart_forwarder_tb");
         $finish;
     end
