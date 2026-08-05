@@ -1,9 +1,8 @@
-
 # BNO085 UART-RVC + RV32I 3-axis gimbal build (Purdue ECE270 iCE40HX8K).
 # Usage in WSL:
-#   make -f Makefile.gimbal gimbal-bitstream RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-#   make -f Makefile.gimbal gimbal-cram      RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-RISCVMOVE_ROOT ?= /mnt/c/2132132/riscvmove
+#   make -f Makefile.gimbal gimbal-bitstream
+#   make -f Makefile.gimbal gimbal-cram
+RISCVMOVE_ROOT ?= ../riscvmove
 BUILD_GIMBAL := build/gimbal
 TOP_GIMBAL := top_riscv_bno_3axis_cpu
 PCF_GIMBAL := constraints/bno085_3axis_cpu.pcf
