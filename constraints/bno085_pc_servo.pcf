@@ -1,9 +1,10 @@
 # BNO085 UART-RVC + PC calculation + 3-channel servo PWM
-set_io hwclk    J3
-set_io bno_rxc  C3
-set_io pc_rxc   B10
-set_io Tx       B12
-set_io servo_r0 B2
-set_io servo_r1 D1
-set_io servo_r2 H1
-set_io green    T9
+set_io hwclk         J3
+set_io bno_rxc       C3
+set_io pc_rxc        B10
+set_io zero_button_b A6
+set_io Tx            B12
+set_io servo_r0      B2
+set_io servo_r1      D1
+set_io servo_r2      H1
+set_io green         T9
