@@ -45,18 +45,18 @@ iCE40HX8K FPGA
 
 ## 빠른 시작: WSL 빌드·업로드
 
-수업용 RV32I 코어가 `/mnt/c/2132132/riscvmove`에 있을 때:
+수업용 RV32I 코어를 프로젝트와 같은 상위 폴더의 `riscvmove`에 두면 기본값 `../riscvmove`를 사용합니다. 다른 위치는 `RISCVMOVE_ROOT=/path/to/riscvmove`로 덮어쓰십시오.
 
 ```bash
 cd /mnt/c/kiat_project
-make -f Makefile.gimbal gimbal-bitstream RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
-make -f Makefile.gimbal gimbal-cram      RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
+make -f Makefile.gimbal gimbal-bitstream
+make -f Makefile.gimbal gimbal-cram
 ```
 
 `gimbal-cram`은 **일시적 SRAM(CRAM) 업로드**입니다. USB/보드 전원이 끊기면 사라집니다. Flash 업로드는 보드 점퍼를 올바르게 설정한 뒤에만 다음을 사용합니다.
 
 ```bash
-make -f Makefile.gimbal gimbal-flash RISCVMOVE_ROOT=/mnt/c/2132132/riscvmove
+make -f Makefile.gimbal gimbal-flash
 ```
 
 ## Pygame 대시보드
