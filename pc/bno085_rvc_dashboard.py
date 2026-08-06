@@ -8,8 +8,7 @@ try:
 except ImportError:
     serial = None
 
-W, H = 1280, 760
-BG, PANEL, TEXT, GRID = (7,22,42), (15,48,82), (234,243,250), (42,82,120)
+W, H = 1280, 760  # Logical dashboard canvas; scaled to every window size.\nBG, PANEL, TEXT, GRID = (7,22,42), (15,48,82), (234,243,250), (42,82,120)
 GOLD, CYAN, ORANGE, RED, GREEN = (210,184,128), (94,218,234), (255,171,74), (239,89,101), (104,218,153)
 
 # Start with a one-to-one mechanical mapping: a 1 degree sensor error commands
@@ -159,7 +158,11 @@ def main():
 
     uart = None if a.simulate else serial.Serial(a.port, a.baud, timeout=0)
     pygame.init()
-    screen = pygame.display.set_mode((W, H))
+    # Draw at one logical resolution, then stretch to the actual desktop/window.
+    # This deliberately fills the whole display without letterbox margins.
+    window = pygame.display.set_mode((W, H), pygame.RESIZABLE)
+    screen = pygame.Surface((W, H))
+    fullscreen = False
     pygame.display.set_caption("PURDUE KIAT | BNO085 FPGA GIMBAL MONITOR")
     title = pygame.font.SysFont("consolas", 27, True)
     label = pygame.font.SysFont("consolas", 18, True)
@@ -182,6 +185,14 @@ def main():
         for e in pygame.event.get():
             if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
                 running = False
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_F11:
+                fullscreen = not fullscreen
+                if fullscreen:
+                    window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                else:
+                    window = pygame.display.set_mode((W, H), pygame.RESIZABLE)
+            if e.type == pygame.VIDEORESIZE and not fullscreen:
+                window = pygame.display.set_mode(e.size, pygame.RESIZABLE)
             if e.type == pygame.KEYDOWN and e.key == pygame.K_z:
                 zero = {key: sample[key] for key in ("roll", "pitch", "yaw")}
                 last_zero_source = "PC Z"
@@ -239,6 +250,12 @@ def main():
         trace(screen, label, pygame.Rect(842, 338, 410, 115), hist["pitch"], ORANGE, "PITCH - degrees", 35)
         trace(screen, label, pygame.Rect(842, 471, 410, 115), hist["yaw"], GOLD, "YAW - degrees", 60)
         trace(screen, label, pygame.Rect(842, 604, 410, 126), hist["vib"], RED, "ACCELERATION VIBRATION - mg", 300)
+        # Scale the fixed logical dashboard to exactly fill the current window.
+        # Non-uniform scaling is intentional here: it eliminates fullscreen margins.
+        if window.get_size() == (W, H):
+            window.blit(screen, (0, 0))
+        else:
+            window.blit(pygame.transform.smoothscale(screen, window.get_size()), (0, 0))
         pygame.display.flip()
         clock.tick(60)
 
