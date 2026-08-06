@@ -12,6 +12,15 @@ W, H = 1280, 760
 BG, PANEL, TEXT, GRID = (7,22,42), (15,48,82), (234,243,250), (42,82,120)
 GOLD, CYAN, ORANGE, RED, GREEN = (210,184,128), (94,218,234), (255,171,74), (239,89,101), (104,218,153)
 
+# Start with a one-to-one mechanical mapping: a 1 degree sensor error commands
+# about 1 degree of counter-rotation at each SG90 axis.  Change only the sign
+# of an axis after mechanical assembly proves that its physical direction is reversed.
+AXIS_BALANCE = {
+    "roll":  (-1, 53),
+    "pitch": (-1, 53),
+    "yaw":   (-1, 53),
+}
+
 class RvcParser:
     def __init__(self):
         self.buf = bytearray()
@@ -54,9 +63,12 @@ def sim(t, seq):
 def clamp(x, lo, hi):
     return max(lo, min(hi, x))
 
-def servo_ticks(angle, zero):
-    # 1 centidegree -> 1 FPGA PWM tick; 1.1 ms to 1.9 ms safety range.
-    return int(clamp(18000 - int(round((angle-zero)*100)), 13200, 22800))
+def servo_ticks(axis, angle, zero):
+    # 12 MHz FPGA ticks: the 1.1-1.9 ms (9600-tick) servo range gives
+    # about 53 ticks/degree for a 180 degree servo.  The minus sign commands
+    # counter-rotation, i.e. active level compensation.
+    direction, ticks_per_degree = AXIS_BALANCE[axis]
+    return int(clamp(18000 + direction * round((angle-zero) * ticks_per_degree), 13200, 22800))
 
 def send_servo_command(uart, ticks):
     payload = b"".join(int(v).to_bytes(2, "big") for v in ticks)
@@ -164,9 +176,9 @@ def main():
         # Feed the FPGA command watchdog at a deterministic 50 Hz, independent
         # of the sensor packet timing.
         if uart and now >= next_command:
-            last_ticks = (servo_ticks(sample["roll"], zero["roll"]),
-                          servo_ticks(sample["pitch"], zero["pitch"]),
-                          servo_ticks(sample["yaw"], zero["yaw"]))
+            last_ticks = (servo_ticks("roll", sample["roll"], zero["roll"]),
+                          servo_ticks("pitch", sample["pitch"], zero["pitch"]),
+                          servo_ticks("yaw", sample["yaw"], zero["yaw"]))
             send_servo_command(uart, last_ticks)
             next_command = now + .02
 
@@ -176,7 +188,7 @@ def main():
         live = a.simulate or now-last_rx < .5
         screen.blit(label.render("SIMULATION" if a.simulate else ("PC CONTROL: "+a.port), True,
                                  CYAN if a.simulate else ORANGE), (30, 57))
-        screen.blit(label.render(f"PC PWM ticks: R0 {last_ticks[0]} R1 {last_ticks[1]} R2 {last_ticks[2]} | B/Z: set zero", True, GREEN), (480, 57))
+        screen.blit(label.render(f"BALANCE 1:1 | R0 {last_ticks[0]} R1 {last_ticks[1]} R2 {last_ticks[2]} | B/Z: set zero", True, GREEN), (480, 57))
         for i, (n, k, c) in enumerate((("ROLL / R0", "roll", CYAN), ("PITCH / R1", "pitch", ORANGE), ("YAW / R2", "yaw", GOLD))):
             card(screen, label, value, pygame.Rect(28+i*220, 94, 205, 92), n, relative[k], c)
         status = pygame.Rect(700, 94, 552, 92)
