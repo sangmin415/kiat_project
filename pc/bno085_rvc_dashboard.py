@@ -93,20 +93,66 @@ def trace(screen, font, rect, values, color, title, scale):
         pygame.draw.lines(screen, color, False, pts, 2)
 
 def stage(screen, font, small, rect, s):
+    # Simplified digital twin of the printed 7095514 assembly:
+    # Main Base -> Tilt Mount (U bracket) -> Camera Mount / BNO085 plate.
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, GOLD, rect, 2, border_radius=12)
     screen.blit(font.render("3-AXIS GIMBAL / WAFER STAGE", True, TEXT), (rect.x+16, rect.y+14))
-    screen.blit(small.render("R0=Roll R1=Pitch R2=Yaw | FPGA keypad B or PC Z: zero calibration", True, GOLD), (rect.x+16, rect.y+45))
-    cx, cy = rect.centerx, rect.centery+25
-    pygame.draw.arc(screen, GOLD, (cx-150, cy-105, 300, 210),
-                    math.radians(180-clamp(s["yaw"], -45, 45)),
-                    math.radians(360-clamp(s["yaw"], -45, 45)), 7)
-    pygame.draw.rect(screen, ORANGE, (cx-120+int(s["pitch"]), cy-72, 240, 145), 6, border_radius=12)
-    plate = pygame.Rect(cx-90+int(s["pitch"]), cy-40+int(s["roll"]), 180, 80)
-    pygame.draw.rect(screen, (26, 92, 111), plate, border_radius=10)
-    pygame.draw.rect(screen, CYAN, plate, 4, border_radius=10)
-    tag = font.render("WAFER STAGE", True, TEXT)
-    screen.blit(tag, (plate.centerx-tag.get_width()//2, plate.centery-tag.get_height()//2))
+    screen.blit(small.render("Printed frame: Main Base / Tilt Mount / Camera Mount", True, GOLD), (rect.x+16, rect.y+45))
+
+    cx, cy = rect.centerx, rect.centery+35
+    roll = int(clamp(s["roll"], -20, 20) * 1.1)
+    pitch = int(clamp(s["pitch"], -20, 20) * 1.4)
+    yaw = int(clamp(s["yaw"], -30, 30) * 0.7)
+
+    # 1) Gimbal_Main_Base: flat printable base and yaw servo housing.
+    base = pygame.Rect(cx-150, cy+125, 300, 50)
+    pygame.draw.rect(screen, (18, 35, 55), base, border_radius=12)
+    pygame.draw.rect(screen, GOLD, base, 3, border_radius=12)
+    for x in (base.left+26, base.right-26):
+        for y in (base.top+14, base.bottom-14):
+            pygame.draw.circle(screen, GOLD, (x, y), 4)
+    yaw_box = pygame.Rect(cx-42+yaw, cy+75, 84, 54)
+    pygame.draw.rect(screen, (25, 65, 92), yaw_box, border_radius=7)
+    pygame.draw.rect(screen, CYAN, yaw_box, 2, border_radius=7)
+    pygame.draw.circle(screen, GOLD, yaw_box.center, 11, 3)
+    screen.blit(small.render("R2", True, TEXT), (yaw_box.x+31, yaw_box.y+18))
+
+    # 2) Gimbal_Tilt_Mount: U-shaped printed bracket and R0/R1 side servos.
+    outer = pygame.Rect(cx-128, cy-72, 256, 150)
+    pygame.draw.line(screen, ORANGE, (outer.left, outer.bottom), (outer.left, outer.top+20), 8)
+    pygame.draw.line(screen, ORANGE, (outer.right, outer.bottom), (outer.right, outer.top+20), 8)
+    pygame.draw.line(screen, ORANGE, (outer.left, outer.top+20), (outer.right, outer.top+20), 8)
+    pygame.draw.line(screen, (31, 90, 112), (outer.left+12, outer.bottom), (outer.left+12, outer.top+20), 3)
+    pygame.draw.line(screen, (31, 90, 112), (outer.right-12, outer.bottom), (outer.right-12, outer.top+20), 3)
+    r0_box = pygame.Rect(outer.left-54, cy-4-roll, 48, 42)
+    r1_box = pygame.Rect(outer.right+6, cy-4+pitch, 48, 42)
+    for box, name in ((r0_box, "R0"), (r1_box, "R1")):
+        pygame.draw.rect(screen, (28, 75, 104), box, border_radius=6)
+        pygame.draw.rect(screen, CYAN, box, 2, border_radius=6)
+        pygame.draw.circle(screen, GOLD, box.center, 8, 2)
+        screen.blit(small.render(name, True, TEXT), (box.x+14, box.y+13))
+
+    # 3) Gimbal_Camera_Mount: small top plate; use it as the BNO085 carrier.
+    mount = pygame.Rect(cx-92+pitch, cy-26+roll, 184, 72)
+    pygame.draw.rect(screen, (20, 55, 78), mount, border_radius=8)
+    pygame.draw.rect(screen, CYAN, mount, 3, border_radius=8)
+    inner = pygame.Rect(mount.x+36, mount.y+15, 112, 42)
+    pygame.draw.rect(screen, (24, 106, 122), inner, border_radius=5)
+    pygame.draw.rect(screen, (94, 218, 234), inner, 2, border_radius=5)
+    for x in (mount.left+14, mount.right-14):
+        for y in (mount.top+12, mount.bottom-12):
+            pygame.draw.circle(screen, GOLD, (x, y), 3)
+    sensor = pygame.Rect(cx-24+pitch, cy-14+roll, 48, 24)
+    pygame.draw.rect(screen, (8, 35, 48), sensor, border_radius=4)
+    pygame.draw.rect(screen, GOLD, sensor, 2, border_radius=4)
+    tag = small.render("BNO085 / STAGE", True, TEXT)
+    screen.blit(tag, (mount.centerx-tag.get_width()//2, mount.bottom+10))
+
+    # Lightweight axis indicators keep the moving relationship readable.
+    screen.blit(small.render(f"ROLL R0  {s['roll']:+.1f}°", True, CYAN), (rect.x+18, rect.bottom-58))
+    screen.blit(small.render(f"PITCH R1  {s['pitch']:+.1f}°", True, ORANGE), (rect.x+18, rect.bottom-36))
+    screen.blit(small.render(f"YAW R2  {s['yaw']:+.1f}°", True, GOLD), (rect.x+18, rect.bottom-14))
 
 def main():
     ap = argparse.ArgumentParser()
