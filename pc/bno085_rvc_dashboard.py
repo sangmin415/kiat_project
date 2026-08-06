@@ -93,66 +93,86 @@ def trace(screen, font, rect, values, color, title, scale):
         pygame.draw.lines(screen, color, False, pts, 2)
 
 def stage(screen, font, small, rect, s):
-    # Simplified digital twin of the printed 7095514 assembly:
-    # Main Base -> Tilt Mount (U bracket) -> Camera Mount / BNO085 plate.
+    # Digital twin of the supplied printed FPV gimbal:
+    # bottom yaw servo -> blue U-frame -> inner roll servo -> upper rear pitch servo.
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, GOLD, rect, 2, border_radius=12)
     screen.blit(font.render("3-AXIS GIMBAL / WAFER STAGE", True, TEXT), (rect.x+16, rect.y+14))
-    screen.blit(small.render("Printed frame: Main Base / Tilt Mount / Camera Mount", True, GOLD), (rect.x+16, rect.y+45))
+    screen.blit(small.render("Printed FPV frame: R2 yaw base / R0 roll inner / R1 pitch rear", True, GOLD), (rect.x+16, rect.y+45))
 
-    cx, cy = rect.centerx, rect.centery+35
+    cx, cy = rect.centerx, rect.centery+8
     roll = int(clamp(s["roll"], -20, 20) * 1.1)
-    pitch = int(clamp(s["pitch"], -20, 20) * 1.4)
+    pitch = int(clamp(s["pitch"], -20, 20) * 1.2)
     yaw = int(clamp(s["yaw"], -30, 30) * 0.7)
+    blue = (42, 54, 112)
+    blue_hi = (88, 108, 186)
+    servo = (182, 132, 58)
+    servo_hi = (227, 180, 96)
+    black = (30, 34, 40)
 
-    # 1) Gimbal_Main_Base: flat printable base and yaw servo housing.
-    base = pygame.Rect(cx-150, cy+125, 300, 50)
-    pygame.draw.rect(screen, (18, 35, 55), base, border_radius=12)
-    pygame.draw.rect(screen, GOLD, base, 3, border_radius=12)
-    for x in (base.left+26, base.right-26):
-        for y in (base.top+14, base.bottom-14):
-            pygame.draw.circle(screen, GOLD, (x, y), 4)
-    yaw_box = pygame.Rect(cx-42+yaw, cy+75, 84, 54)
-    pygame.draw.rect(screen, (25, 65, 92), yaw_box, border_radius=7)
-    pygame.draw.rect(screen, CYAN, yaw_box, 2, border_radius=7)
-    pygame.draw.circle(screen, GOLD, yaw_box.center, 11, 3)
-    screen.blit(small.render("R2", True, TEXT), (yaw_box.x+31, yaw_box.y+18))
+    # R2 / YAW: lower vertical servo and rotating blue pedestal.
+    yaw_servo = pygame.Rect(cx-43+yaw, cy+102, 86, 92)
+    pygame.draw.rect(screen, servo, yaw_servo, border_radius=5)
+    pygame.draw.rect(screen, GOLD, yaw_servo, 2, border_radius=5)
+    pygame.draw.rect(screen, servo_hi, (yaw_servo.x-14, yaw_servo.y+14, 14, 18), border_radius=2)
+    pygame.draw.rect(screen, servo_hi, (yaw_servo.right, yaw_servo.y+14, 14, 18), border_radius=2)
+    turret = pygame.Rect(cx-105+yaw, cy+74, 210, 38)
+    pygame.draw.rect(screen, blue, turret, border_radius=12)
+    pygame.draw.rect(screen, blue_hi, turret, 3, border_radius=12)
+    pygame.draw.ellipse(screen, GOLD, (cx-28+yaw, cy+86, 56, 16), 2)
+    screen.blit(small.render("R2 / YAW", True, TEXT), (yaw_servo.x+12, yaw_servo.bottom+4))
 
-    # 2) Gimbal_Tilt_Mount: U-shaped printed bracket and R0/R1 side servos.
-    outer = pygame.Rect(cx-128, cy-72, 256, 150)
-    pygame.draw.line(screen, ORANGE, (outer.left, outer.bottom), (outer.left, outer.top+20), 8)
-    pygame.draw.line(screen, ORANGE, (outer.right, outer.bottom), (outer.right, outer.top+20), 8)
-    pygame.draw.line(screen, ORANGE, (outer.left, outer.top+20), (outer.right, outer.top+20), 8)
-    pygame.draw.line(screen, (31, 90, 112), (outer.left+12, outer.bottom), (outer.left+12, outer.top+20), 3)
-    pygame.draw.line(screen, (31, 90, 112), (outer.right-12, outer.bottom), (outer.right-12, outer.top+20), 3)
-    r0_box = pygame.Rect(outer.left-54, cy-4-roll, 48, 42)
-    r1_box = pygame.Rect(outer.right+6, cy-4+pitch, 48, 42)
-    for box, name in ((r0_box, "R0"), (r1_box, "R1")):
-        pygame.draw.rect(screen, (28, 75, 104), box, border_radius=6)
-        pygame.draw.rect(screen, CYAN, box, 2, border_radius=6)
-        pygame.draw.circle(screen, GOLD, box.center, 8, 2)
-        screen.blit(small.render(name, True, TEXT), (box.x+14, box.y+13))
+    # Blue Gimbal_Main_Base and the tall right-side printed Tilt Mount.
+    base = pygame.Rect(cx-128+yaw, cy+26, 256, 58)
+    pygame.draw.rect(screen, blue, base, border_radius=12)
+    pygame.draw.rect(screen, blue_hi, base, 3, border_radius=12)
+    right_leg = pygame.Rect(cx+76+yaw, cy-84, 48, 150)
+    left_leg = pygame.Rect(cx-124+yaw, cy-8, 38, 76)
+    pygame.draw.rect(screen, blue, right_leg, border_radius=9)
+    pygame.draw.rect(screen, blue_hi, right_leg, 3, border_radius=9)
+    pygame.draw.rect(screen, blue, left_leg, border_radius=8)
+    pygame.draw.rect(screen, blue_hi, left_leg, 3, border_radius=8)
+    pygame.draw.circle(screen, (12, 20, 35), (right_leg.centerx, cy+21), 14)
+    pygame.draw.circle(screen, blue_hi, (right_leg.centerx, cy+21), 14, 3)
 
-    # 3) Gimbal_Camera_Mount: small top plate; use it as the BNO085 carrier.
-    mount = pygame.Rect(cx-92+pitch, cy-26+roll, 184, 72)
-    pygame.draw.rect(screen, (20, 55, 78), mount, border_radius=8)
-    pygame.draw.rect(screen, CYAN, mount, 3, border_radius=8)
-    inner = pygame.Rect(mount.x+36, mount.y+15, 112, 42)
-    pygame.draw.rect(screen, (24, 106, 122), inner, border_radius=5)
-    pygame.draw.rect(screen, (94, 218, 234), inner, 2, border_radius=5)
-    for x in (mount.left+14, mount.right-14):
-        for y in (mount.top+12, mount.bottom-12):
-            pygame.draw.circle(screen, GOLD, (x, y), 3)
-    sensor = pygame.Rect(cx-24+pitch, cy-14+roll, 48, 24)
-    pygame.draw.rect(screen, (8, 35, 48), sensor, border_radius=4)
-    pygame.draw.rect(screen, GOLD, sensor, 2, border_radius=4)
-    tag = small.render("BNO085 / STAGE", True, TEXT)
-    screen.blit(tag, (mount.centerx-tag.get_width()//2, mount.bottom+10))
+    # R0 / ROLL: gold servo inside the lower U-frame.
+    r0 = pygame.Rect(cx-53+yaw, cy+30-roll, 94, 42)
+    pygame.draw.rect(screen, servo, r0, border_radius=5)
+    pygame.draw.rect(screen, GOLD, r0, 2, border_radius=5)
+    pygame.draw.circle(screen, servo_hi, (r0.left+17, r0.centery), 9)
+    screen.blit(small.render("R0", True, TEXT), (r0.centerx-8, r0.y+13))
 
-    # Lightweight axis indicators keep the moving relationship readable.
-    screen.blit(small.render(f"ROLL R0  {s['roll']:+.1f}°", True, CYAN), (rect.x+18, rect.bottom-58))
-    screen.blit(small.render(f"PITCH R1  {s['pitch']:+.1f}°", True, ORANGE), (rect.x+18, rect.bottom-36))
-    screen.blit(small.render(f"YAW R2  {s['yaw']:+.1f}°", True, GOLD), (rect.x+18, rect.bottom-14))
+    # Camera/BNO085 carrier: dark front cylinder and blue roll ring.
+    camera_y = cy-66+pitch-roll
+    ring = pygame.Rect(cx-90+yaw, camera_y-18, 110, 82)
+    pygame.draw.rect(screen, blue, ring, border_radius=18)
+    pygame.draw.rect(screen, blue_hi, ring, 3, border_radius=18)
+    body = pygame.Rect(cx-158+yaw, camera_y-8, 106, 60)
+    pygame.draw.rect(screen, black, body, border_radius=15)
+    pygame.draw.rect(screen, (80, 84, 95), body, 3, border_radius=15)
+    pygame.draw.circle(screen, (8, 12, 18), (body.left+8, body.centery), 28)
+    pygame.draw.circle(screen, GOLD, (body.left+8, body.centery), 28, 3)
+    pygame.draw.circle(screen, (28, 55, 70), (body.left+8, body.centery), 17)
+
+    # R1 / PITCH: gold rear servo mounted above/behind the camera carrier.
+    r1 = pygame.Rect(cx+18+yaw, camera_y-42, 116, 44)
+    pygame.draw.rect(screen, servo, r1, border_radius=5)
+    pygame.draw.rect(screen, GOLD, r1, 2, border_radius=5)
+    horn = pygame.Rect(r1.left-16, r1.centery-7, 18, 14)
+    pygame.draw.rect(screen, servo_hi, horn, border_radius=3)
+    screen.blit(small.render("R1 / PITCH", True, TEXT), (r1.x+20, r1.y+13))
+
+    # Replace the original FPV camera function with our sensor platform label.
+    plate = pygame.Rect(cx-40+yaw, camera_y+13, 68, 26)
+    pygame.draw.rect(screen, (18, 93, 112), plate, border_radius=4)
+    pygame.draw.rect(screen, CYAN, plate, 2, border_radius=4)
+    tag = small.render("BNO085 STAGE", True, TEXT)
+    screen.blit(tag, (cx-42+yaw, camera_y+68))
+
+    # Real assembly axis legend.
+    screen.blit(small.render(f"R0 Roll {s['roll']:+.1f}°", True, CYAN), (rect.x+18, rect.bottom-54))
+    screen.blit(small.render(f"R1 Pitch {s['pitch']:+.1f}°", True, ORANGE), (rect.x+18, rect.bottom-34))
+    screen.blit(small.render(f"R2 Yaw {s['yaw']:+.1f}°", True, GOLD), (rect.x+18, rect.bottom-14))
 
 def main():
     ap = argparse.ArgumentParser()
