@@ -93,86 +93,58 @@ def trace(screen, font, rect, values, color, title, scale):
         pygame.draw.lines(screen, color, False, pts, 2)
 
 def stage(screen, font, small, rect, s):
-    # Digital twin of the supplied printed FPV gimbal:
-    # bottom yaw servo -> blue U-frame -> inner roll servo -> upper rear pitch servo.
+    # Simple attitude view: no decorative mechanism, only the three controlled
+    # axes and the resulting tilted stage plane.
     pygame.draw.rect(screen, PANEL, rect, border_radius=12)
     pygame.draw.rect(screen, GOLD, rect, 2, border_radius=12)
-    screen.blit(font.render("3-AXIS GIMBAL / WAFER STAGE", True, TEXT), (rect.x+16, rect.y+14))
-    screen.blit(small.render("Printed FPV frame: R2 yaw base / R0 roll inner / R1 pitch rear", True, GOLD), (rect.x+16, rect.y+45))
+    screen.blit(font.render("3-AXIS ATTITUDE / LEVELING VIEW", True, TEXT), (rect.x+16, rect.y+14))
+    screen.blit(small.render("R0 Roll (X)   R1 Pitch (Y)   R2 Yaw (Z)   |   zero-relative angles", True, GOLD), (rect.x+16, rect.y+45))
 
-    cx, cy = rect.centerx, rect.centery+8
-    roll = int(clamp(s["roll"], -20, 20) * 1.1)
-    pitch = int(clamp(s["pitch"], -20, 20) * 1.2)
-    yaw = int(clamp(s["yaw"], -30, 30) * 0.7)
-    blue = (42, 54, 112)
-    blue_hi = (88, 108, 186)
-    servo = (182, 132, 58)
-    servo_hi = (227, 180, 96)
-    black = (30, 34, 40)
+    cx, cy = rect.centerx, rect.centery+24
+    roll = clamp(s["roll"], -30, 30)
+    pitch = clamp(s["pitch"], -30, 30)
+    yaw = clamp(s["yaw"], -45, 45)
 
-    # R2 / YAW: lower vertical servo and rotating blue pedestal.
-    yaw_servo = pygame.Rect(cx-43+yaw, cy+102, 86, 92)
-    pygame.draw.rect(screen, servo, yaw_servo, border_radius=5)
-    pygame.draw.rect(screen, GOLD, yaw_servo, 2, border_radius=5)
-    pygame.draw.rect(screen, servo_hi, (yaw_servo.x-14, yaw_servo.y+14, 14, 18), border_radius=2)
-    pygame.draw.rect(screen, servo_hi, (yaw_servo.right, yaw_servo.y+14, 14, 18), border_radius=2)
-    turret = pygame.Rect(cx-105+yaw, cy+74, 210, 38)
-    pygame.draw.rect(screen, blue, turret, border_radius=12)
-    pygame.draw.rect(screen, blue_hi, turret, 3, border_radius=12)
-    pygame.draw.ellipse(screen, GOLD, (cx-28+yaw, cy+86, 56, 16), 2)
-    screen.blit(small.render("R2 / YAW", True, TEXT), (yaw_servo.x+12, yaw_servo.bottom+4))
+    # Reference horizontal plane: thin gray outline.
+    ref = [(cx-142, cy-54), (cx+142, cy-54), (cx+142, cy+54), (cx-142, cy+54)]
+    pygame.draw.polygon(screen, (16, 37, 58), ref)
+    pygame.draw.polygon(screen, GRID, ref, 2)
+    screen.blit(small.render("REFERENCE LEVEL", True, GRID), (cx-58, cy-88))
 
-    # Blue Gimbal_Main_Base and the tall right-side printed Tilt Mount.
-    base = pygame.Rect(cx-128+yaw, cy+26, 256, 58)
-    pygame.draw.rect(screen, blue, base, border_radius=12)
-    pygame.draw.rect(screen, blue_hi, base, 3, border_radius=12)
-    right_leg = pygame.Rect(cx+76+yaw, cy-84, 48, 150)
-    left_leg = pygame.Rect(cx-124+yaw, cy-8, 38, 76)
-    pygame.draw.rect(screen, blue, right_leg, border_radius=9)
-    pygame.draw.rect(screen, blue_hi, right_leg, 3, border_radius=9)
-    pygame.draw.rect(screen, blue, left_leg, border_radius=8)
-    pygame.draw.rect(screen, blue_hi, left_leg, 3, border_radius=8)
-    pygame.draw.circle(screen, (12, 20, 35), (right_leg.centerx, cy+21), 14)
-    pygame.draw.circle(screen, blue_hi, (right_leg.centerx, cy+21), 14, 3)
+    # Current wafer stage plane: perspective shift conveys Roll and Pitch.
+    ldy, rdy = int(roll*1.5 + pitch*.45), int(-roll*1.5 + pitch*.45)
+    depth = int(pitch*1.0)
+    plane = [(cx-118, cy-42+ldy), (cx+118, cy-42+rdy),
+             (cx+118, cy+42+rdy+depth), (cx-118, cy+42+ldy+depth)]
+    pygame.draw.polygon(screen, (22, 93, 112), plane)
+    pygame.draw.polygon(screen, CYAN, plane, 4)
+    pygame.draw.line(screen, CYAN, plane[0], plane[2], 1)
+    pygame.draw.line(screen, CYAN, plane[1], plane[3], 1)
+    label = font.render("STAGE", True, TEXT)
+    screen.blit(label, (cx-label.get_width()//2, cy-12+int(pitch*.7)))
 
-    # R0 / ROLL: gold servo inside the lower U-frame.
-    r0 = pygame.Rect(cx-53+yaw, cy+30-roll, 94, 42)
-    pygame.draw.rect(screen, servo, r0, border_radius=5)
-    pygame.draw.rect(screen, GOLD, r0, 2, border_radius=5)
-    pygame.draw.circle(screen, servo_hi, (r0.left+17, r0.centery), 9)
-    screen.blit(small.render("R0", True, TEXT), (r0.centerx-8, r0.y+13))
+    # R0 Roll: cyan X-axis through the stage.
+    pygame.draw.line(screen, CYAN, (cx-175, cy+ldy), (cx+175, cy+rdy), 4)
+    pygame.draw.polygon(screen, CYAN, [(cx+175,cy+rdy),(cx+160,cy+rdy-7),(cx+160,cy+rdy+7)])
+    screen.blit(small.render(f"X / R0 ROLL  {roll:+.2f}°", True, CYAN), (cx-174, cy+100))
 
-    # Camera/BNO085 carrier: dark front cylinder and blue roll ring.
-    camera_y = cy-66+pitch-roll
-    ring = pygame.Rect(cx-90+yaw, camera_y-18, 110, 82)
-    pygame.draw.rect(screen, blue, ring, border_radius=18)
-    pygame.draw.rect(screen, blue_hi, ring, 3, border_radius=18)
-    body = pygame.Rect(cx-158+yaw, camera_y-8, 106, 60)
-    pygame.draw.rect(screen, black, body, border_radius=15)
-    pygame.draw.rect(screen, (80, 84, 95), body, 3, border_radius=15)
-    pygame.draw.circle(screen, (8, 12, 18), (body.left+8, body.centery), 28)
-    pygame.draw.circle(screen, GOLD, (body.left+8, body.centery), 28, 3)
-    pygame.draw.circle(screen, (28, 55, 70), (body.left+8, body.centery), 17)
+    # R1 Pitch: orange Y-axis, vertical perspective direction.
+    pygame.draw.line(screen, ORANGE, (cx, cy+130+int(pitch)), (cx, cy-138+int(pitch)), 4)
+    pygame.draw.polygon(screen, ORANGE, [(cx,cy-138+int(pitch)),(cx-7,cy-122+int(pitch)),(cx+7,cy-122+int(pitch))])
+    screen.blit(small.render(f"Y / R1 PITCH  {pitch:+.2f}°", True, ORANGE), (cx+16, cy+100))
 
-    # R1 / PITCH: gold rear servo mounted above/behind the camera carrier.
-    r1 = pygame.Rect(cx+18+yaw, camera_y-42, 116, 44)
-    pygame.draw.rect(screen, servo, r1, border_radius=5)
-    pygame.draw.rect(screen, GOLD, r1, 2, border_radius=5)
-    horn = pygame.Rect(r1.left-16, r1.centery-7, 18, 14)
-    pygame.draw.rect(screen, servo_hi, horn, border_radius=3)
-    screen.blit(small.render("R1 / PITCH", True, TEXT), (r1.x+20, r1.y+13))
+    # R2 Yaw: gold rotation arc around the Z axis.
+    arc = pygame.Rect(cx-108, cy-108, 216, 216)
+    begin = math.radians(-90)
+    end = math.radians(-90 + yaw)
+    pygame.draw.arc(screen, GOLD, arc, min(begin,end), max(begin,end), 5)
+    pygame.draw.circle(screen, GOLD, (cx, cy), 9, 2)
+    pygame.draw.line(screen, GOLD, (cx,cy), (cx,cy-82), 3)
+    screen.blit(small.render(f"Z / R2 YAW  {yaw:+.2f}°", True, GOLD), (rect.right-180, cy+100))
 
-    # Replace the original FPV camera function with our sensor platform label.
-    plate = pygame.Rect(cx-40+yaw, camera_y+13, 68, 26)
-    pygame.draw.rect(screen, (18, 93, 112), plate, border_radius=4)
-    pygame.draw.rect(screen, CYAN, plate, 2, border_radius=4)
-    tag = small.render("BNO085 STAGE", True, TEXT)
-    screen.blit(tag, (cx-42+yaw, camera_y+68))
-
-    # Real assembly axis legend.
-    screen.blit(small.render(f"R0 Roll {s['roll']:+.1f}°", True, CYAN), (rect.x+18, rect.bottom-54))
-    screen.blit(small.render(f"R1 Pitch {s['pitch']:+.1f}°", True, ORANGE), (rect.x+18, rect.bottom-34))
-    screen.blit(small.render(f"R2 Yaw {s['yaw']:+.1f}°", True, GOLD), (rect.x+18, rect.bottom-14))
+    # Crosshair makes 0-degree alignment immediately visible.
+    pygame.draw.line(screen, GRID, (cx-8,cy), (cx+8,cy), 1)
+    pygame.draw.line(screen, GRID, (cx,cy-8), (cx,cy+8), 1)
 
 def main():
     ap = argparse.ArgumentParser()
