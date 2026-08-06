@@ -16,9 +16,9 @@ GOLD, CYAN, ORANGE, RED, GREEN = (210,184,128), (94,218,234), (255,171,74), (239
 # about 1 degree of counter-rotation at each SG90 axis.  Change only the sign
 # of an axis after mechanical assembly proves that its physical direction is reversed.
 AXIS_BALANCE = {
-    "roll":  (-1, 53),
+    "roll":  (+1, 53),
     "pitch": (-1, 53),
-    "yaw":   (-1, 53),
+    "yaw":   (+1, 53),
 }
 
 class RvcParser:
