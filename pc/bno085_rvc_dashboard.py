@@ -8,7 +8,8 @@ try:
 except ImportError:
     serial = None
 
-W, H = 1280, 760  # Logical dashboard canvas; scaled to every window size.\nBG, PANEL, TEXT, GRID = (7,22,42), (15,48,82), (234,243,250), (42,82,120)
+W, H = 1280, 760  # Logical dashboard canvas; scaled to every window size.
+BG, PANEL, TEXT, GRID = (7,22,42), (15,48,82), (234,243,250), (42,82,120)
 GOLD, CYAN, ORANGE, RED, GREEN = (210,184,128), (94,218,234), (255,171,74), (239,89,101), (104,218,153)
 
 # Start with a one-to-one mechanical mapping: a 1 degree sensor error commands
